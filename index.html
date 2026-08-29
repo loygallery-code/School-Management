@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">ທະບຽນນັກຮຽນ | ລະບົບບໍລິຫານໂຮງຮຽນ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --paper:#F7F3EA;
+    --paper-2:#EFE8D8;
+    --ink:#1D2B4F;
+    --ink-soft:#4A5570;
+    --stamp:#A83232;
+    --gold:#B8912A;
+    --line:#D8D2C4;
+    --ok:#2F6B3A;
+    --white:#FFFDF8;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans Lao','Noto Sans',sans-serif;
+    min-height:100vh;
+  }
+  header.book-header{
+    background:var(--ink);
+    color:var(--paper);
+    padding:28px 32px 22px;
+    position:relative;
+    border-bottom:4px double var(--gold);
+  }
+  header.book-header h1{
+    font-family:'Noto Serif Lao',serif;
+    font-weight:700;
+    font-size:26px;
+    margin:0 0 4px;
+    letter-spacing:.5px;
+  }
+  header.book-header p{
+    margin:0;
+    font-size:14px;
+    color:#C9CEDC;
+  }
+  .lang-switch{
+    position:absolute;
+    right:32px; top:26px;
+    display:flex;
+    border:1px solid var(--gold);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .lang-switch button{
+    font-family:'Noto Sans Lao',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    padding:6px 14px;
+    background:transparent;
+    border:none;
+    color:#C9CEDC;
+    cursor:pointer;
+  }
+  .lang-switch button.active{
+    background:var(--gold);
+    color:var(--ink);
+  }
+  nav.tabs{
+    display:flex;
+    gap:2px;
+    background:var(--paper-2);
+    padding:0 32px;
+    border-bottom:1px solid var(--line);
+  }
+  nav.tabs button{
+    font-family:'Noto Sans Lao',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    padding:14px 22px;
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    color:var(--ink-soft);
+    border-bottom:3px solid transparent;
+    position:relative;
+    top:1px;
+  }
+  nav.tabs button.active{
+    color:var(--ink);
+    border-bottom:3px solid var(--stamp);
+    background:var(--paper);
+  }
+  main{padding:28px 32px 60px; max-width:1100px; margin:0 auto;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .toolbar{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .toolbar input, .toolbar select{
+    font-family:inherit;
+    font-size:14px;
+    padding:9px 12px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--white);
+    color:var(--ink);
+  }
+  .toolbar input[type=text]{flex:1; min-width:180px;}
+  .btn{
+    font-family:'Noto Sans Lao',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:var(--radius);
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    cursor:pointer;
+  }
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+  }
+  .btn.stamp{
+    background:var(--stamp);
+    border-color:var(--stamp);
+    color:#fff;
+  }
+  .btn:hover{opacity:.9;}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  th{
+    text-align:left;
+    font-size:12px;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    background:var(--paper-2);
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  td{
+    padding:10px 12px;
+    font-size:14px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#FBF8F0;}
+  .avatar{
+    width:34px;height:34px;
+    border-radius:4px;
+    object-fit:cover;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+  }
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:20px;
+    border:1px solid currentColor;
+  }
+  .badge.active{color:var(--ok);}
+  .badge.transferred{color:var(--gold);}
+  .badge.graduated{color:var(--ink-soft);}
+  .row-link{cursor:pointer;}
+
+  /* Modal */
+  .overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(29,43,79,.45);
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 16px;
+    overflow-y:auto;
+    z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:8px;
+    width:100%; max-width:640px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:18px 22px;
+    border-bottom:2px double var(--gold);
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:8px 8px 0 0;
+  }
+  .modal-head h2{
+    font-family:'Noto Serif Lao',serif;
+    font-size:18px; margin:0;
+  }
+  .modal-head button{
+    background:none;border:none;color:var(--paper);
+    font-size:20px;cursor:pointer;
+  }
+  .modal-body{padding:20px 22px;}
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px 16px;
+  }
+  .form-grid .full{grid-column:1/-1;}
+  label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+  }
+  input, select{
+    width:100%;
+    font-family:inherit;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--white);
+    color:var(--ink);
+  }
+  .photo-box{
+    width:100px;height:120px;
+    border:1.5px dashed var(--gold);
+    border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--white);
+    overflow:hidden;
+    cursor:pointer;
+    font-size:11px;
+    color:var(--gold);
+    text-align:center;
+    margin-bottom:8px;
+  }
+  .photo-box img{width:100%;height:100%;object-fit:cover;}
+  .modal-foot{
+    padding:16px 22px;
+    display:flex; justify-content:flex-end; gap:10px;
+    border-top:1px solid var(--line);
+  }
+  .empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .steps{
+    display:flex; gap:10px; margin-bottom:20px;
+  }
+  .steps div{
+    flex:1;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px 14px;
+  }
+  .steps label{margin-bottom:6px;}
+  .pick-list{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--white);
+    max-height:280px;
+    overflow-y:auto;
+  }
+  .pick-row{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .pick-row:last-child{border-bottom:none;}
+  .toast{
+    position:fixed; bottom:24px; right:24px;
+    background:var(--ink); color:var(--paper);
+    padding:12px 18px; border-radius:var(--radius);
+    font-size:14px; box-shadow:0 8px 20px rgba(0,0,0,.25);
+    z-index:99; display:none;
+  }
+  .toast.show{display:block;}
+  .enrolled-title{font-family:'Noto Serif Lao',serif; margin-top:32px;}
+  @media(max-width:640px){
+    .form-grid{grid-template-columns:1fr;}
+    header.book-header{padding:22px 18px 60px;}
+    main{padding:20px 16px 60px;}
+    .lang-switch{right:18px; top:18px;}
+    nav.tabs{padding:0 16px; overflow-x:auto;}
+  }
+</style>
+</head>
+<body>
+
+<header class="book-header">
+  <div class="lang-switch">
+    <button id="langLo" class="active" data-lang="lo">ລາວ</button>
+    <button id="langEn" data-lang="en">EN</button>
+  </div>
+  <h1 data-i18n="title">ທະບຽນນັກຮຽນ</h1>
+  <p data-i18n="subtitle">ຂໍ້ມູນນັກຮຽນ ແລະ ການລົງທະບຽນເຂົ້າຫ້ອງຮຽນ</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="students" data-i18n="tabStudents">ລາຍຊື່ນັກຮຽນ</button>
+  <button class="tab-btn" data-tab="enroll" data-i18n="tabEnroll">ລົງທະບຽນເຂົ້າຫ້ອງ</button>
+</nav>
+
+<main>
+
+  <!-- ===== STUDENTS PANEL ===== -->
+  <section id="panel-students" class="panel active">
+    <div class="toolbar">
+      <input type="text" id="searchInput" data-i18n-ph="searchPh" placeholder="ຄົ້ນຫາຊື່ ຫຼື ລະຫັດນັກຮຽນ...">
+      <select id="filterGrade"><option value="" data-i18n="allGrades">ທຸກຊັ້ນ</option></select>
+      <select id="filterStatus">
+        <option value="" data-i18n="allStatus">ທຸກສະຖານະ</option>
+        <option value="active" data-i18n="statusActive">ກຳລັງຮຽນ</option>
+        <option value="transferred" data-i18n="statusTransferred">ໂອນຍ້າຍ</option>
+        <option value="graduated" data-i18n="statusGraduated">ຮຽນຈົບ</option>
+        <option value="dropped" data-i18n="statusDropped">ອອກກາງຄັນ</option>
+      </select>
+      <button class="btn stamp" id="btnAddStudent" data-i18n="addStudent">+ ເພີ່ມນັກຮຽນ</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th data-i18n="colCode">ລະຫັດ</th>
+          <th data-i18n="colName">ຊື່-ນາມສະກຸນ</th>
+          <th data-i18n="colDob">ວັນເກີດ</th>
+          <th data-i18n="colGrade">ຊັ້ນປັດຈຸບັນ</th>
+          <th data-i18n="colStatus">ສະຖານະ</th>
+        </tr>
+      </thead>
+      <tbody id="studentsBody"></tbody>
+    </table>
+    <div id="studentsEmpty" class="empty" style="display:none;" data-i18n="noStudents">ຍັງບໍ່ມີຂໍ້ມູນນັກຮຽນ — ກົດ "ເພີ່ມນັກຮຽນ" ເພື່ອເລີ່ມ</div>
+  </section>
+
+  <!-- ===== ENROLL PANEL ===== -->
+  <section id="panel-enroll" class="panel">
+    <div class="steps">
+      <div>
+        <label data-i18n="academicYear">ປີການສຶກສາ</label>
+        <select id="enrollYear"></select>
+      </div>
+      <div>
+        <label data-i18n="grade">ຊັ້ນຮຽນ</label>
+        <select id="enrollGrade"></select>
+      </div>
+      <div>
+        <label data-i18n="classroom">ຫ້ອງຮຽນ</label>
+        <select id="enrollClassroom"></select>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="enrollSearch" data-i18n-ph="enrollSearchPh" placeholder="ຄົ້ນຫານັກຮຽນທີ່ຈະລົງທະບຽນ...">
+      <button class="btn stamp" id="btnEnrollSelected" data-i18n="enrollSelected" disabled>ລົງທະບຽນນັກຮຽນທີ່ເລືອກ</button>
+    </div>
+    <div class="pick-list" id="enrollList">
+      <div class="empty" data-i18n="chooseFirst">ກະລຸນາເລືອກ ປີ → ຊັ້ນ → ຫ້ອງ ກ່ອນ</div>
+    </div>
+
+    <h3 class="enrolled-title" data-i18n="alreadyEnrolled">ນັກຮຽນທີ່ລົງທະບຽນແລ້ວໃນຫ້ອງນີ້</h3>
+    <table>
+      <thead><tr>
+        <th data-i18n="colCode">ລະຫັດ</th>
+        <th data-i18n="colName">ຊື່-ນາມສະກຸນ</th>
+        <th data-i18n="colEnrollDate">ວັນທີ່ລົງທະບຽນ</th>
+        <th data-i18n="colStatus">ສະຖານະ</th>
+      </tr></thead>
+      <tbody id="enrolledBody"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<!-- ===== STUDENT MODAL ===== -->
+<div class="overlay" id="studentOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle" data-i18n="addStudentTitle">ເພີ່ມນັກຮຽນ</h2>
+      <button id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="photo-box" id="photoBox" onclick="document.getElementById('photoInput').click()" data-i18n="photoLabel">ຮູບ 3×4</div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none;">
+      <div class="form-grid">
+        <div>
+          <label data-i18n="labelCode">ລະຫັດນັກຮຽນ *</label>
+          <input type="text" id="f_code">
+        </div>
+        <div>
+          <label data-i18n="labelGender">ເພດ</label>
+          <select id="f_gender">
+            <option value="" data-i18n="dash">-</option>
+            <option value="ຊາຍ" data-i18n="male">ຊາຍ</option>
+            <option value="ຍິງ" data-i18n="female">ຍິງ</option>
+          </select>
+        </div>
+        <div>
+          <label data-i18n="labelFirst">ຊື່ *</label>
+          <input type="text" id="f_first">
+        </div>
+        <div>
+          <label data-i18n="labelLast">ນາມສະກຸນ *</label>
+          <input type="text" id="f_last">
+        </div>
+        <div>
+          <label data-i18n="labelDob">ວັນເດືອນປີເກີດ</label>
+          <input type="date" id="f_dob">
+        </div>
+        <div>
+          <label data-i18n="labelNat">ສັນຊາດ</label>
+          <input type="text" id="f_nat" value="ລາວ">
+        </div>
+        <div>
+          <label data-i18n="labelVillage">ບ້ານ</label>
+          <input type="text" id="f_village">
+        </div>
+        <div>
+          <label data-i18n="labelDistrict">ເມືອງ</label>
+          <input type="text" id="f_district">
+        </div>
+        <div>
+          <label data-i18n="labelProvince">ແຂວງ</label>
+          <input type="text" id="f_province">
+        </div>
+        <div>
+          <label data-i18n="colStatus">ສະຖານະ</label>
+          <select id="f_status">
+            <option value="active" data-i18n="statusActive">ກຳລັງຮຽນ</option>
+            <option value="transferred" data-i18n="statusTransferred">ໂອນຍ້າຍ</option>
+            <option value="graduated" data-i18n="statusGraduated">ຮຽນຈົບ</option>
+            <option value="dropped" data-i18n="statusDropped">ອອກກາງຄັນ</option>
+          </select>
+        </div>
+        <div class="full" style="border-top:1px solid var(--line); margin-top:6px; padding-top:14px;">
+          <label style="font-size:13px;" data-i18n="guardianInfo">ຂໍ້ມູນຜູ້ປົກຄອງ</label>
+        </div>
+        <div>
+          <label data-i18n="labelGuardianName">ຊື່ຜູ້ປົກຄອງ</label>
+          <input type="text" id="g_name">
+        </div>
+        <div>
+          <label data-i18n="labelRelation">ຄວາມກ່ຽວຂ້ອງ</label>
+          <input type="text" id="g_rel" data-i18n-ph="relationPh" placeholder="ພໍ່ / ແມ່ / ອື່ນໆ">
+        </div>
+        <div>
+          <label data-i18n="labelPhone">ເບີໂທ</label>
+          <input type="text" id="g_phone">
+        </div>
+        <div>
+          <label data-i18n="labelJob">ອາຊີບ</label>
+          <input type="text" id="g_job">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="cancelModal" data-i18n="cancel">ຍົກເລີກ</button>
+      <button class="btn stamp" id="saveStudent" data-i18n="save">ບັນທຶກ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PHOTO_BUCKET = "student-photos";
+
+// ---------- I18N ----------
+const I18N = {
+  lo: {
+    pageTitle: "ທະບຽນນັກຮຽນ | ລະບົບບໍລິຫານໂຮງຮຽນ",
+    title: "ທະບຽນນັກຮຽນ",
+    subtitle: "ຂໍ້ມູນນັກຮຽນ ແລະ ການລົງທະບຽນເຂົ້າຫ້ອງຮຽນ",
+    tabStudents: "ລາຍຊື່ນັກຮຽນ",
+    tabEnroll: "ລົງທະບຽນເຂົ້າຫ້ອງ",
+    searchPh: "ຄົ້ນຫາຊື່ ຫຼື ລະຫັດນັກຮຽນ...",
+    allGrades: "ທຸກຊັ້ນ",
+    allStatus: "ທຸກສະຖານະ",
+    statusActive: "ກຳລັງຮຽນ",
+    statusTransferred: "ໂອນຍ້າຍ",
+    statusGraduated: "ຮຽນຈົບ",
+    statusDropped: "ອອກກາງຄັນ",
+    addStudent: "+ ເພີ່ມນັກຮຽນ",
+    colCode: "ລະຫັດ",
+    colName: "ຊື່-ນາມສະກຸນ",
+    colDob: "ວັນເກີດ",
+    colGrade: "ຊັ້ນປັດຈຸບັນ",
+    colStatus: "ສະຖານະ",
+    colEnrollDate: "ວັນທີ່ລົງທະບຽນ",
+    noStudents: 'ຍັງບໍ່ມີຂໍ້ມູນນັກຮຽນ — ກົດ "ເພີ່ມນັກຮຽນ" ເພື່ອເລີ່ມ',
+    academicYear: "ປີການສຶກສາ",
+    grade: "ຊັ້ນຮຽນ",
+    classroom: "ຫ້ອງຮຽນ",
+    enrollSearchPh: "ຄົ້ນຫານັກຮຽນທີ່ຈະລົງທະບຽນ...",
+    enrollSelected: "ລົງທະບຽນນັກຮຽນທີ່ເລືອກ",
+    chooseFirst: "ກະລຸນາເລືອກ ປີ → ຊັ້ນ → ຫ້ອງ ກ່ອນ",
+    alreadyEnrolled: "ນັກຮຽນທີ່ລົງທະບຽນແລ້ວໃນຫ້ອງນີ້",
+    noRoom: "ບໍ່ມີຫ້ອງ",
+    noEnrollable: "ບໍ່ພົບນັກຮຽນທີ່ຈະລົງທະບຽນ",
+    noEnrolled: "ຍັງບໍ່ມີນັກຮຽນລົງທະບຽນ",
+    addStudentTitle: "ເພີ່ມນັກຮຽນ",
+    editStudentTitle: "ແກ້ໄຂຂໍ້ມູນນັກຮຽນ",
+    photoLabel: "ຮູບ 3×4",
+    labelCode: "ລະຫັດນັກຮຽນ *",
+    labelGender: "ເພດ",
+    dash: "-",
+    male: "ຊາຍ",
+    female: "ຍິງ",
+    labelFirst: "ຊື່ *",
+    labelLast: "ນາມສະກຸນ *",
+    labelDob: "ວັນເດືອນປີເກີດ",
+    labelNat: "ສັນຊາດ",
+    labelVillage: "ບ້ານ",
+    labelDistrict: "ເມືອງ",
+    labelProvince: "ແຂວງ",
+    guardianInfo: "ຂໍ້ມູນຜູ້ປົກຄອງ",
+    labelGuardianName: "ຊື່ຜູ້ປົກຄອງ",
+    labelRelation: "ຄວາມກ່ຽວຂ້ອງ",
+    relationPh: "ພໍ່ / ແມ່ / ອື່ນໆ",
+    labelPhone: "ເບີໂທ",
+    labelJob: "ອາຊີບ",
+    cancel: "ຍົກເລີກ",
+    save: "ບັນທຶກ",
+    requireFields: "ກະລຸນາປ້ອນ ລະຫັດ, ຊື່, ນາມສະກຸນ",
+    loadError: "ໂຫຼດຂໍ້ມູນຜິດພາດ: ",
+    saveError: "ບັນທຶກຜິດພາດ: ",
+    uploadError: "ອັບໂຫລດຮູບຜິດພາດ: ",
+    saveSuccess: "ບັນທຶກສຳເລັດ",
+    enrollError: "ລົງທະບຽນຜິດພາດ: ",
+    enrollSuccess: (n)=>`ລົງທະບຽນສຳເລັດ ${n} ຄົນ`
+  },
+  en: {
+    pageTitle: "Student Registry | School Management System",
+    title: "Student Registry",
+    subtitle: "Student records and classroom enrollment",
+    tabStudents: "Student List",
+    tabEnroll: "Classroom Enrollment",
+    searchPh: "Search by name or student code...",
+    allGrades: "All grades",
+    allStatus: "All statuses",
+    statusActive: "Active",
+    statusTransferred: "Transferred",
+    statusGraduated: "Graduated",
+    statusDropped: "Dropped out",
+    addStudent: "+ Add Student",
+    colCode: "Code",
+    colName: "Full Name",
+    colDob: "Date of Birth",
+    colGrade: "Current Grade",
+    colStatus: "Status",
+    colEnrollDate: "Enrollment Date",
+    noStudents: 'No students yet — click "Add Student" to get started',
+    academicYear: "Academic Year",
+    grade: "Grade",
+    classroom: "Classroom",
+    enrollSearchPh: "Search students to enroll...",
+    enrollSelected: "Enroll Selected Students",
+    chooseFirst: "Please select Year → Grade → Classroom first",
+    alreadyEnrolled: "Students already enrolled in this classroom",
+    noRoom: "No classroom",
+    noEnrollable: "No students found to enroll",
+    noEnrolled: "No students enrolled yet",
+    addStudentTitle: "Add Student",
+    editStudentTitle: "Edit Student",
+    photoLabel: "3×4 Photo",
+    labelCode: "Student Code *",
+    labelGender: "Gender",
+    dash: "-",
+    male: "Male",
+    female: "Female",
+    labelFirst: "First Name *",
+    labelLast: "Last Name *",
+    labelDob: "Date of Birth",
+    labelNat: "Nationality",
+    labelVillage: "Village",
+    labelDistrict: "District",
+    labelProvince: "Province",
+    guardianInfo: "Guardian Information",
+    labelGuardianName: "Guardian Name",
+    labelRelation: "Relationship",
+    relationPh: "Father / Mother / Other",
+    labelPhone: "Phone",
+    labelJob: "Occupation",
+    cancel: "Cancel",
+    save: "Save",
+    requireFields: "Please enter code, first name, and last name",
+    loadError: "Error loading data: ",
+    saveError: "Error saving: ",
+    uploadError: "Error uploading photo: ",
+    saveSuccess: "Saved successfully",
+    enrollError: "Error enrolling: ",
+    enrollSuccess: (n)=>`Successfully enrolled ${n} student(s)`
+  }
+};
+let currentLang = 'lo';
+function t(key){
+  const v = I18N[currentLang][key];
+  return typeof v === 'function' ? v : v;
+}
+
+function applyStaticI18n(){
+  document.documentElement.lang = currentLang === 'lo' ? 'lo' : 'en';
+  document.getElementById('pageTitle').textContent = I18N[currentLang].pageTitle;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(I18N[currentLang][key] !== undefined) el.textContent = I18N[currentLang][key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-ph');
+    if(I18N[currentLang][key] !== undefined) el.setAttribute('placeholder', I18N[currentLang][key]);
+  });
+  document.getElementById('langLo').classList.toggle('active', currentLang==='lo');
+  document.getElementById('langEn').classList.toggle('active', currentLang==='en');
+  // photo box: keep image if present, otherwise show label
+  const pb = document.getElementById('photoBox');
+  if(!pb.querySelector('img')) pb.textContent = I18N[currentLang].photoLabel;
+}
+
+document.getElementById('langLo').addEventListener('click', ()=>switchLang('lo'));
+document.getElementById('langEn').addEventListener('click', ()=>switchLang('en'));
+function switchLang(lang){
+  currentLang = lang;
+  applyStaticI18n();
+  loadStudents();
+  loadEnrollmentPanel();
+}
+
+let grades = [], years = [], classrooms = [];
+let editingStudentId = null;
+let selectedPhotoFile = null;
+let currentEnrollmentSet = new Set();
+let checkedForEnroll = new Set();
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+// ---------- TABS ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- LOAD REFERENCE DATA ----------
+async function loadReferenceData(){
+  const [{data:g}, {data:y}, {data:c}] = await Promise.all([
+    sb.from('grade_levels').select('*').order('grade_order'),
+    sb.from('academic_years').select('*').order('start_date', {ascending:false}),
+    sb.from('classrooms').select('*')
+  ]);
+  grades = g || []; years = y || []; classrooms = c || [];
+  rebuildReferenceSelects();
+}
+
+function rebuildReferenceSelects(){
+  const filterGrade = document.getElementById('filterGrade');
+  const prevFilterGrade = filterGrade.value;
+  filterGrade.innerHTML = `<option value="">${t('allGrades')}</option>`;
+  grades.forEach(gr=>{
+    filterGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`;
+  });
+  filterGrade.value = prevFilterGrade;
+
+  const enrollYear = document.getElementById('enrollYear');
+  const prevYear = enrollYear.value;
+  enrollYear.innerHTML = '';
+  years.forEach(yr=>{
+    enrollYear.innerHTML += `<option value="${yr.academic_year_id}" ${yr.is_current?'selected':''}>${yr.year_name}</option>`;
+  });
+  if(prevYear) enrollYear.value = prevYear;
+
+  const enrollGrade = document.getElementById('enrollGrade');
+  const prevGrade = enrollGrade.value;
+  enrollGrade.innerHTML = '';
+  grades.forEach(gr=>{
+    enrollGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`;
+  });
+  if(prevGrade) enrollGrade.value = prevGrade;
+}
+
+// ---------- STUDENTS TABLE ----------
+const statusKeyMap = {active:'statusActive', transferred:'statusTransferred', graduated:'statusGraduated', dropped:'statusDropped'};
+
+async function loadStudents(){
+  let query = sb.from('students').select(`
+    student_id, student_code, first_name, last_name, date_of_birth, status, photo_url,
+    student_enrollments ( classroom_id, academic_year_id,
+      classrooms ( room_name, grade_id ) )
+  `).order('student_code');
+
+  const status = document.getElementById('filterStatus').value;
+  if(status) query = query.eq('status', status);
+
+  const {data, error} = await query;
+  if(error){ toast(t('loadError')+error.message); return; }
+
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+  const gradeFilter = document.getElementById('filterGrade').value;
+
+  let rows = data || [];
+  if(search){
+    rows = rows.filter(s =>
+      (s.student_code||'').toLowerCase().includes(search) ||
+      (s.first_name+' '+s.last_name).toLowerCase().includes(search)
+    );
+  }
+
+  const body = document.getElementById('studentsBody');
+  body.innerHTML = '';
+  let shown = 0;
+
+  rows.forEach(s=>{
+    const enr = (s.student_enrollments||[]).sort((a,b)=>b.academic_year_id-a.academic_year_id)[0];
+    const gradeId = enr?.classrooms?.grade_id;
+    if(gradeFilter && String(gradeId) !== gradeFilter) return;
+
+    shown++;
+    const gradeName = grades.find(g=>g.grade_id===gradeId)?.grade_name || '-';
+    const roomName = enr?.classrooms?.room_name || '-';
+    const badgeClass = s.status || 'active';
+    const badgeLabel = I18N[currentLang][statusKeyMap[s.status]] || s.status;
+
+    body.innerHTML += `
+      <tr class="row-link" onclick="openEditStudent(${s.student_id})">
+        <td>${s.photo_url ? `<img class="avatar" src="${s.photo_url}">` : `<div class="avatar"></div>`}</td>
+        <td>${s.student_code}</td>
+        <td>${s.first_name} ${s.last_name}</td>
+        <td>${s.date_of_birth || '-'}</td>
+        <td>${gradeName} ${roomName!=='-' ? '('+roomName+')' : ''}</td>
+        <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+      </tr>`;
+  });
+
+  document.getElementById('studentsEmpty').style.display = shown ? 'none' : 'block';
+}
+
+document.getElementById('searchInput').addEventListener('input', loadStudents);
+document.getElementById('filterGrade').addEventListener('change', loadStudents);
+document.getElementById('filterStatus').addEventListener('change', loadStudents);
+
+// ---------- STUDENT MODAL ----------
+const overlay = document.getElementById('studentOverlay');
+function resetForm(){
+  editingStudentId = null;
+  selectedPhotoFile = null;
+  document.getElementById('modalTitle').textContent = t('addStudentTitle');
+  document.getElementById('photoBox').textContent = t('photoLabel');
+  ['f_code','f_first','f_last','f_dob','f_village','f_district','f_province','g_name','g_rel','g_phone','g_job']
+    .forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_gender').value='';
+  document.getElementById('f_nat').value='ລາວ';
+  document.getElementById('f_status').value='active';
+}
+
+document.getElementById('btnAddStudent').addEventListener('click', ()=>{
+  resetForm();
+  overlay.classList.add('open');
+});
+document.getElementById('closeModal').addEventListener('click', ()=>overlay.classList.remove('open'));
+document.getElementById('cancelModal').addEventListener('click', ()=>overlay.classList.remove('open'));
+
+document.getElementById('photoInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  selectedPhotoFile = file;
+  const reader = new FileReader();
+  reader.onload = ()=> {
+    document.getElementById('photoBox').innerHTML = `<img src="${reader.result}">`;
+  };
+  reader.readAsDataURL(file);
+});
+
+async function openEditStudent(id){
+  const {data:s, error} = await sb.from('students').select(`
+    *, student_guardians ( guardian_id, is_primary_contact, guardians ( * ) )
+  `).eq('student_id', id).single();
+  if(error){ toast(t('loadError')+error.message); return; }
+
+  resetForm();
+  editingStudentId = id;
+  document.getElementById('modalTitle').textContent = t('editStudentTitle');
+  document.getElementById('f_code').value = s.student_code || '';
+  document.getElementById('f_first').value = s.first_name || '';
+  document.getElementById('f_last').value = s.last_name || '';
+  document.getElementById('f_gender').value = s.gender || '';
+  document.getElementById('f_dob').value = s.date_of_birth || '';
+  document.getElementById('f_nat').value = s.nationality || '';
+  document.getElementById('f_village').value = s.village || '';
+  document.getElementById('f_district').value = s.district || '';
+  document.getElementById('f_province').value = s.province || '';
+  document.getElementById('f_status').value = s.status || 'active';
+  if(s.photo_url){
+    document.getElementById('photoBox').innerHTML = `<img src="${s.photo_url}">`;
+  }
+  const primaryGuardian = (s.student_guardians||[]).find(g=>g.is_primary_contact) || (s.student_guardians||[])[0];
+  if(primaryGuardian && primaryGuardian.guardians){
+    document.getElementById('g_name').value = primaryGuardian.guardians.full_name || '';
+    document.getElementById('g_rel').value = primaryGuardian.guardians.relationship || '';
+    document.getElementById('g_phone').value = primaryGuardian.guardians.phone || '';
+    document.getElementById('g_job').value = primaryGuardian.guardians.occupation || '';
+  }
+  overlay.classList.add('open');
+}
+window.openEditStudent = openEditStudent;
+
+document.getElementById('saveStudent').addEventListener('click', async ()=>{
+  const code = document.getElementById('f_code').value.trim();
+  const first = document.getElementById('f_first').value.trim();
+  const last = document.getElementById('f_last').value.trim();
+  if(!code || !first || !last){
+    toast(t('requireFields'));
+    return;
+  }
+
+  let photo_url = undefined;
+  if(selectedPhotoFile){
+    const ext = selectedPhotoFile.name.split('.').pop();
+    const path = `${code}-${Date.now()}.${ext}`;
+    const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, selectedPhotoFile, {upsert:true});
+    if(upErr){
+      toast(t('uploadError')+upErr.message);
+    } else {
+      const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+      photo_url = pub.publicUrl;
+    }
+  }
+
+  const payload = {
+    student_code: code,
+    first_name: first,
+    last_name: last,
+    gender: document.getElementById('f_gender').value || null,
+    date_of_birth: document.getElementById('f_dob').value || null,
+    nationality: document.getElementById('f_nat').value || null,
+    village: document.getElementById('f_village').value || null,
+    district: document.getElementById('f_district').value || null,
+    province: document.getElementById('f_province').value || null,
+    status: document.getElementById('f_status').value
+  };
+  if(photo_url) payload.photo_url = photo_url;
+
+  let studentId = editingStudentId;
+  if(editingStudentId){
+    const {error} = await sb.from('students').update(payload).eq('student_id', editingStudentId);
+    if(error){ toast(t('saveError')+error.message); return; }
+  } else {
+    const {data, error} = await sb.from('students').insert(payload).select().single();
+    if(error){ toast(t('saveError')+error.message); return; }
+    studentId = data.student_id;
+  }
+
+  const gName = document.getElementById('g_name').value.trim();
+  if(gName){
+    const gPayload = {
+      full_name: gName,
+      relationship: document.getElementById('g_rel').value || null,
+      phone: document.getElementById('g_phone').value || null,
+      occupation: document.getElementById('g_job').value || null
+    };
+    const {data:existingLink} = await sb.from('student_guardians')
+      .select('guardian_id').eq('student_id', studentId).eq('is_primary_contact', true).maybeSingle();
+
+    if(existingLink){
+      await sb.from('guardians').update(gPayload).eq('guardian_id', existingLink.guardian_id);
+    } else {
+      const {data:newGuardian, error:gErr} = await sb.from('guardians').insert(gPayload).select().single();
+      if(!gErr){
+        await sb.from('student_guardians').insert({
+          student_id: studentId, guardian_id: newGuardian.guardian_id, is_primary_contact: true
+        });
+      }
+    }
+  }
+
+  toast(t('saveSuccess'));
+  overlay.classList.remove('open');
+  loadStudents();
+});
+
+// ---------- ENROLLMENT ----------
+function refreshEnrollClassroomOptions(){
+  const yearId = document.getElementById('enrollYear').value;
+  const gradeId = document.getElementById('enrollGrade').value;
+  const sel = document.getElementById('enrollClassroom');
+  sel.innerHTML = '';
+  const opts = classrooms.filter(c => String(c.academic_year_id)===String(yearId) && String(c.grade_id)===String(gradeId));
+  if(opts.length===0){
+    sel.innerHTML = `<option value="">${t('noRoom')}</option>`;
+  } else {
+    opts.forEach(c=> sel.innerHTML += `<option value="${c.classroom_id}">${c.room_name}</option>`);
+  }
+  loadEnrollmentPanel();
+}
+document.getElementById('enrollYear').addEventListener('change', refreshEnrollClassroomOptions);
+document.getElementById('enrollGrade').addEventListener('change', refreshEnrollClassroomOptions);
+document.getElementById('enrollClassroom').addEventListener('change', loadEnrollmentPanel);
+document.getElementById('enrollSearch').addEventListener('input', renderEnrollList);
+
+let allStudentsCache = [];
+let enrollableStudents = [];
+
+async function loadEnrollmentPanel(){
+  const classroomId = document.getElementById('enrollClassroom').value;
+  const yearId = document.getElementById('enrollYear').value;
+  checkedForEnroll = new Set();
+  document.getElementById('btnEnrollSelected').disabled = true;
+
+  if(!classroomId){
+    document.getElementById('enrollList').innerHTML = `<div class="empty">${t('chooseFirst')}</div>`;
+    document.getElementById('enrolledBody').innerHTML = '';
+    return;
+  }
+
+  const {data:enrolled, error} = await sb.from('student_enrollments')
+    .select('enrollment_id, enrollment_date, enrollment_status, students(student_id, student_code, first_name, last_name)')
+    .eq('classroom_id', classroomId).eq('academic_year_id', yearId);
+
+  if(error){ toast(t('loadError')+error.message); return; }
+
+  currentEnrollmentSet = new Set((enrolled||[]).map(e=>e.students.student_id));
+
+  const enrolledBody = document.getElementById('enrolledBody');
+  enrolledBody.innerHTML = (enrolled||[]).map(e=>`
+    <tr>
+      <td>${e.students.student_code}</td>
+      <td>${e.students.first_name} ${e.students.last_name}</td>
+      <td>${e.enrollment_date || '-'}</td>
+      <td><span class="badge active">${I18N[currentLang][statusKeyMap[e.enrollment_status]] || e.enrollment_status}</span></td>
+    </tr>`).join('') || `<tr><td colspan="4" class="empty">${t('noEnrolled')}</td></tr>`;
+
+  if(allStudentsCache.length===0){
+    const {data:allS} = await sb.from('students').select('student_id, student_code, first_name, last_name').eq('status','active').order('student_code');
+    allStudentsCache = allS || [];
+  }
+  enrollableStudents = allStudentsCache.filter(s => !currentEnrollmentSet.has(s.student_id));
+  renderEnrollList();
+}
+
+function renderEnrollList(){
+  const search = document.getElementById('enrollSearch').value.trim().toLowerCase();
+  const list = document.getElementById('enrollList');
+  const rows = enrollableStudents.filter(s =>
+    !search ||
+    s.student_code.toLowerCase().includes(search) ||
+    (s.first_name+' '+s.last_name).toLowerCase().includes(search)
+  );
+  if(rows.length===0){
+    list.innerHTML = `<div class="empty">${t('noEnrollable')}</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(s=>`
+    <div class="pick-row">
+      <input type="checkbox" data-sid="${s.student_id}" ${checkedForEnroll.has(s.student_id)?'checked':''} onchange="toggleCheck(${s.student_id}, this.checked)">
+      <span>${s.student_code} — ${s.first_name} ${s.last_name}</span>
+    </div>`).join('');
+}
+function toggleCheck(sid, checked){
+  if(checked) checkedForEnroll.add(sid); else checkedForEnroll.delete(sid);
+  document.getElementById('btnEnrollSelected').disabled = checkedForEnroll.size===0;
+}
+window.toggleCheck = toggleCheck;
+
+document.getElementById('btnEnrollSelected').addEventListener('click', async ()=>{
+  const classroomId = document.getElementById('enrollClassroom').value;
+  const yearId = document.getElementById('enrollYear').value;
+  const rows = Array.from(checkedForEnroll).map(sid=>({
+    student_id: sid, classroom_id: classroomId, academic_year_id: yearId, enrollment_status:'active'
+  }));
+  const {error} = await sb.from('student_enrollments').insert(rows);
+  if(error){ toast(t('enrollError')+error.message); return; }
+  toast(I18N[currentLang].enrollSuccess(rows.length));
+  loadEnrollmentPanel();
+});
+
+// ---------- INIT ----------
+(async function init(){
+  applyStaticI18n();
+  await loadReferenceData();
+  await loadStudents();
+})();
+</script>
+</body>
+</html>
