@@ -61,6 +61,17 @@
   .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
   .overlay.open{display:flex;}
   .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:600px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal.wide{max-width:820px;}
+  .section-title{font-family:'Noto Serif Lao',serif; font-size:15px; margin:18px 0 10px; border-bottom:1px solid var(--line); padding-bottom:6px;}
+  .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; font-size:14px;}
+  .info-grid .k{color:var(--ink-soft); font-size:12px;}
+  .profile-head{display:flex; gap:16px; align-items:center; margin-bottom:10px;}
+  .profile-head img, .profile-head .avatar-lg{width:80px;height:96px; border-radius:6px; object-fit:cover; border:1px solid var(--line); background:var(--paper-2);}
+  #staffPrintArea{display:none;}
+  @media print{
+    body.printing-staff > *:not(#staffPrintArea){display:none !important;}
+    body.printing-staff #staffPrintArea{display:block !important; padding:16px; font-family:'Noto Sans Lao','Noto Sans',sans-serif; color:#000;}
+  }
   .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
   .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
   .modal-head button{background:none;border:none;color:var(--paper); font-size:20px;cursor:pointer;}
@@ -84,6 +95,7 @@
   .row-ok{color:var(--ok);}
   .row-bad{color:var(--stamp);}
   .progress-text{font-size:13px; color:var(--ink-soft); margin-top:8px;}
+  .row-actions{display:flex; gap:6px;}
   .bulk-tabs{display:flex; gap:8px; margin-bottom:16px;}
   .bulk-tabs button{flex:1; padding:10px; border:1px solid var(--line); background:var(--white); border-radius:var(--radius); cursor:pointer; font-family:'Noto Sans Lao',sans-serif; font-weight:600; font-size:13px; color:var(--ink-soft);}
   .bulk-tabs button.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
@@ -132,6 +144,7 @@
       </select>
       <button class="btn stamp" id="btnAddStaff">+ ເພີ່ມຄູ/ພະນັກງານ</button>
       <button class="btn secondary" id="btnBulkImportStaff">ນຳເຂົ້າ Excel</button>
+      <button class="btn secondary" id="btnPrintStaffReport">🖶 ພິມລາຍງານລວມ</button>
     </div>
     <table>
       <thead><tr><th></th><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th>ພະແນກ</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th></th></tr></thead>
@@ -189,7 +202,45 @@
         <div><label>ວັນເດືອນປີເກີດ</label><input type="date" id="f_dob"></div>
         <div><label>ເບີໂທ</label><input type="text" id="f_phone"></div>
         <div><label>ພະແນກ</label><input type="text" id="f_department"></div>
+
+        <div class="full" style="border-top:1px solid var(--line); margin-top:6px; padding-top:14px;">
+          <label style="font-size:13px;">ບ້ານເກີດ</label>
+        </div>
+        <div><label>ບ້ານ</label><input type="text" id="f_birth_village"></div>
+        <div><label>ເມືອງ</label><input type="text" id="f_birth_district"></div>
+        <div><label>ແຂວງ</label><input type="text" id="f_birth_province"></div>
+        <div></div>
+
+        <div class="full" style="border-top:1px solid var(--line); margin-top:6px; padding-top:14px;">
+          <label style="font-size:13px;">ບ້ານຢູ່ປັດຈຸບັນ</label>
+        </div>
+        <div><label>ບ້ານ</label><input type="text" id="f_current_village"></div>
+        <div><label>ເມືອງ</label><input type="text" id="f_current_district"></div>
+        <div><label>ແຂວງ</label><input type="text" id="f_current_province"></div>
+        <div></div>
+
+        <div class="full" style="border-top:1px solid var(--line); margin-top:6px; padding-top:14px;">
+          <label style="font-size:13px;">ການສຶກສາ ແລະ ໜ້າທີ່</label>
+        </div>
+        <div>
+          <label>ລະດັບການສຶກສາ</label>
+          <select id="f_education">
+            <option value="">-</option>
+            <option value="ປະຖົມ">ປະຖົມ</option>
+            <option value="ມັດທະຍົມຕົ້ນ">ມັດທະຍົມຕົ້ນ</option>
+            <option value="ມັດທະຍົມປາຍ">ມັດທະຍົມປາຍ</option>
+            <option value="ວິຊາຊີບຊັ້ນຕົ້ນ (ປວຊ)">ວິຊາຊີບຊັ້ນຕົ້ນ (ປວຊ)</option>
+            <option value="ອະນຸປະລິນຍາ (ປວສ)">ອະນຸປະລິນຍາ (ປວສ)</option>
+            <option value="ປະລິນຍາຕີ">ປະລິນຍາຕີ</option>
+            <option value="ປະລິນຍາໂທ">ປະລິນຍາໂທ</option>
+            <option value="ປະລິນຍາເອກ">ປະລິນຍາເອກ</option>
+          </select>
+        </div>
+        <div><label>ສາຍທີ່ຈົບ (ຮຽນກ່ຽວກັບຫຍັງ)</label><input type="text" id="f_major" placeholder="ເຊັ່ນ ຄູສອນພາສາອັງກິດ, ບໍລິຫານທຸລະກິດ"></div>
+        <div class="full"><label>ໜ້າທີ່ຮັບຜິດຊອບ</label><input type="text" id="f_responsibility" placeholder="ເຊັ່ນ ຄູປະຈຳຫ້ອງ ປໍ1 + ສອນວິຊາຄະນິດສາດ"></div>
+
         <div><label>ວັນທີ່ເລີ່ມວຽກ</label><input type="date" id="f_hire"></div>
+        <div><label>ອາຍຸການ (ອັດຕະໂນມັດ)</label><input type="text" id="f_tenure" disabled style="background:var(--paper-2); color:var(--ink-soft);"></div>
         <div><label>ສະຖານະ</label><select id="f_status"><option value="active">ປະຈຳການ</option><option value="inactive">ພົ້ນຕຳແໜ່ງ</option></select></div>
       </div>
     </div>
@@ -244,7 +295,20 @@
   </div>
 </div>
 
+<!-- ===== STAFF PROFILE MODAL ===== -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal wide">
+    <div class="modal-head"><h2>ປະຫວັດຄູ/ພະນັກງານ</h2><button id="closeProfile">&times;</button></div>
+    <div class="modal-body" id="profileBody"></div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="closeProfile2">ປິດ</button>
+      <button class="btn stamp" id="btnPrintProfile">🖶 ພິມ</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+<div id="staffPrintArea"></div>
 
 <script>
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
@@ -341,7 +405,10 @@ async function loadStaff(){
       <td>${esc(s.department||'-')}</td>
       <td>${esc(s.phone||'-')}</td>
       <td><span class="badge ${s.status}">${s.status==='active'?'ປະຈຳການ':'ພົ້ນຕຳແໜ່ງ'}</span></td>
-      <td><button class="btn small secondary" onclick="openEditStaff(${s.staff_id})">✎</button></td>
+      <td class="row-actions">
+        <button class="btn small secondary" onclick="openStaffProfile(${s.staff_id})">ປະຫວັດ</button>
+        <button class="btn small secondary" onclick="openEditStaff(${s.staff_id})">✎</button>
+      </td>
     </tr>`).join('');
   document.getElementById('staffEmpty').style.display = rows.length ? 'none' : 'block';
   buildSelects();
@@ -350,18 +417,38 @@ document.getElementById('searchInput').addEventListener('input', loadStaff);
 document.getElementById('filterStatus').addEventListener('change', loadStaff);
 
 const overlay = document.getElementById('staffOverlay');
+function computeTenure(hireDateStr){
+  if(!hireDateStr) return '-';
+  const hire = new Date(hireDateStr);
+  const now = new Date();
+  if(isNaN(hire.getTime())) return '-';
+  let years = now.getFullYear() - hire.getFullYear();
+  let months = now.getMonth() - hire.getMonth();
+  let days = now.getDate() - hire.getDate();
+  if(days < 0){ months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+  if(months < 0){ years--; months += 12; }
+  return `${years} ປີ ${months} ເດືອນ ${days} ວັນ`;
+}
+
 function resetForm(){
   editingStaffId = null;
   selectedPhotoFile = null;
   document.getElementById('modalTitle').textContent = 'ເພີ່ມຄູ/ພະນັກງານ';
   document.getElementById('photoBox').textContent = 'ຮູບ 3×4';
-  ['f_code','f_position','f_first','f_last','f_dob','f_phone','f_department','f_hire'].forEach(id=>document.getElementById(id).value='');
+  ['f_code','f_position','f_first','f_last','f_dob','f_phone','f_department','f_hire',
+   'f_birth_village','f_birth_district','f_birth_province',
+   'f_current_village','f_current_district','f_current_province',
+   'f_major','f_responsibility','f_tenure'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f_gender').value='';
+  document.getElementById('f_education').value='';
   document.getElementById('f_status').value='active';
 }
 document.getElementById('btnAddStaff').addEventListener('click', ()=>{ resetForm(); overlay.classList.add('open'); });
 document.getElementById('closeModal').addEventListener('click', ()=>overlay.classList.remove('open'));
 document.getElementById('cancelModal').addEventListener('click', ()=>overlay.classList.remove('open'));
+document.getElementById('f_hire').addEventListener('change', (e)=>{
+  document.getElementById('f_tenure').value = computeTenure(e.target.value);
+});
 
 document.getElementById('photoInput').addEventListener('change', (e)=>{
   const file = e.target.files[0];
@@ -387,7 +474,17 @@ async function openEditStaff(id){
   document.getElementById('f_phone').value = s.phone||'';
   document.getElementById('f_department').value = s.department||'';
   document.getElementById('f_hire').value = s.hire_date||'';
+  document.getElementById('f_tenure').value = computeTenure(s.hire_date);
   document.getElementById('f_status').value = s.status||'active';
+  document.getElementById('f_birth_village').value = s.birth_village||'';
+  document.getElementById('f_birth_district').value = s.birth_district||'';
+  document.getElementById('f_birth_province').value = s.birth_province||'';
+  document.getElementById('f_current_village').value = s.current_village||'';
+  document.getElementById('f_current_district').value = s.current_district||'';
+  document.getElementById('f_current_province').value = s.current_province||'';
+  document.getElementById('f_education').value = s.education_level||'';
+  document.getElementById('f_major').value = s.major||'';
+  document.getElementById('f_responsibility').value = s.responsibility_note||'';
   if(s.photo_url){ document.getElementById('photoBox').innerHTML = `<img src="${s.photo_url}">`; }
   overlay.classList.add('open');
 }
@@ -419,7 +516,16 @@ document.getElementById('saveStaff').addEventListener('click', async ()=>{
     position: document.getElementById('f_position').value || null,
     department: document.getElementById('f_department').value || null,
     hire_date: document.getElementById('f_hire').value || null,
-    status: document.getElementById('f_status').value
+    status: document.getElementById('f_status').value,
+    birth_village: document.getElementById('f_birth_village').value || null,
+    birth_district: document.getElementById('f_birth_district').value || null,
+    birth_province: document.getElementById('f_birth_province').value || null,
+    current_village: document.getElementById('f_current_village').value || null,
+    current_district: document.getElementById('f_current_district').value || null,
+    current_province: document.getElementById('f_current_province').value || null,
+    education_level: document.getElementById('f_education').value || null,
+    major: document.getElementById('f_major').value || null,
+    responsibility_note: document.getElementById('f_responsibility').value || null
   };
   if(photo_url) payload.photo_url = photo_url;
 
@@ -515,8 +621,12 @@ document.querySelectorAll('.bulk-tab-btn').forEach(btn=>{
 });
 
 document.getElementById('btnDownloadStaffTemplate').addEventListener('click', ()=>{
-  const headers = ['staff_code','first_name','last_name','gender','date_of_birth','phone','position','department','hire_date','status'];
-  const sample = ['DPY-STF-001','ສົມສີ','ວົງໄຊ','ຊາຍ','1985-05-12','02055699787','ຜູ້ອຳນວຍການ','ບໍລິຫານ','2020-09-01','active'];
+  const headers = ['staff_code','first_name','last_name','gender','date_of_birth','phone','position','department',
+    'birth_village','birth_district','birth_province','current_village','current_district','current_province',
+    'education_level','major','responsibility_note','hire_date','status'];
+  const sample = ['DPY-STF-001','ສົມສີ','ວົງໄຊ','ຊາຍ','1985-05-12','02055699787','ຜູ້ອຳນວຍການ','ບໍລິຫານ',
+    'ບ້ານໂພນສະຫວັນ','ໄກສອນ ພົມວິຫານ','ສະຫວັນນະເຂດ','ບ້ານໂພນສະຫວັນ','ໄກສອນ ພົມວິຫານ','ສະຫວັນນະເຂດ',
+    'ປະລິນຍາຕີ','ບໍລິຫານການສຶກສາ','ບໍລິຫານໂຮງຮຽນ','2020-09-01','active'];
   const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Staff');
@@ -578,6 +688,15 @@ document.getElementById('btnConfirmStaffImport').addEventListener('click', async
       phone: (row.phone||'').toString().trim() || null,
       position: (row.position||'').toString().trim() || null,
       department: (row.department||'').toString().trim() || null,
+      birth_village: (row.birth_village||'').toString().trim() || null,
+      birth_district: (row.birth_district||'').toString().trim() || null,
+      birth_province: (row.birth_province||'').toString().trim() || null,
+      current_village: (row.current_village||'').toString().trim() || null,
+      current_district: (row.current_district||'').toString().trim() || null,
+      current_province: (row.current_province||'').toString().trim() || null,
+      education_level: (row.education_level||'').toString().trim() || null,
+      major: (row.major||'').toString().trim() || null,
+      responsibility_note: (row.responsibility_note||'').toString().trim() || null,
       hire_date: (row.hire_date||'').toString().trim() || null,
       status: (row.status||'active').toString().trim() || 'active'
     };
@@ -642,6 +761,156 @@ document.getElementById('btnConfirmStaffPhotoImport').addEventListener('click', 
   progress.textContent = failed>0 ? `ອັບໂຫລດສຳເລັດ ${ok} ຮູບ, ລົ້ມເຫຼວ ${failed} ຮູບ` : `ອັບໂຫລດສຳເລັດ ${ok} ຮູບ`;
   toast(progress.textContent);
   loadStaff();
+});
+
+// ---------- STAFF PROFILE ----------
+const profileOverlay = document.getElementById('profileOverlay');
+let currentProfileStaffId = null;
+
+function esc2(s){ return esc(s); }
+
+async function openStaffProfile(id){
+  const {data:s, error} = await sb.from('staff').select('*').eq('staff_id', id).single();
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+  currentProfileStaffId = id;
+
+  const body = document.getElementById('profileBody');
+  body.innerHTML = `
+    <div class="profile-head">
+      ${s.photo_url ? `<img src="${s.photo_url}">` : `<div class="avatar-lg"></div>`}
+      <div>
+        <h3 style="font-family:'Noto Serif Lao',serif; margin:0 0 2px;">${esc(s.first_name)} ${esc(s.last_name)}</h3>
+        <div style="font-size:13px; color:var(--ink-soft);">${esc(s.staff_code)} · ${esc(s.position||'-')}</div>
+        <span class="badge ${s.status}">${s.status==='active'?'ປະຈຳການ':'ພົ້ນຕຳແໜ່ງ'}</span>
+      </div>
+    </div>
+
+    <div class="section-title">ຂໍ້ມູນທົ່ວໄປ</div>
+    <div class="info-grid">
+      <div><div class="k">ເພດ</div>${esc(s.gender||'-')}</div>
+      <div><div class="k">ວັນເດືອນປີເກີດ</div>${s.date_of_birth||'-'}</div>
+      <div><div class="k">ເບີໂທ</div>${esc(s.phone||'-')}</div>
+      <div><div class="k">ພະແນກ</div>${esc(s.department||'-')}</div>
+    </div>
+
+    <div class="section-title">ບ້ານເກີດ / ບ້ານປັດຈຸບັນ</div>
+    <div class="info-grid">
+      <div><div class="k">ບ້ານເກີດ</div>${esc([s.birth_village,s.birth_district,s.birth_province].filter(Boolean).join(', ')||'-')}</div>
+      <div><div class="k">ບ້ານປັດຈຸບັນ</div>${esc([s.current_village,s.current_district,s.current_province].filter(Boolean).join(', ')||'-')}</div>
+    </div>
+
+    <div class="section-title">ການສຶກສາ ແລະ ໜ້າທີ່</div>
+    <div class="info-grid">
+      <div><div class="k">ລະດັບການສຶກສາ</div>${esc(s.education_level||'-')}</div>
+      <div><div class="k">ສາຍທີ່ຈົບ</div>${esc(s.major||'-')}</div>
+      <div class="full" style="grid-column:1/-1;"><div class="k">ໜ້າທີ່ຮັບຜິດຊອບ</div>${esc(s.responsibility_note||'-')}</div>
+    </div>
+
+    <div class="section-title">ອາຍຸການເຮັດວຽກ</div>
+    <div class="info-grid">
+      <div><div class="k">ວັນທີ່ເລີ່ມວຽກ</div>${s.hire_date||'-'}</div>
+      <div><div class="k">ອາຍຸການ (ຮອດປັດຈຸບັນ)</div>${computeTenure(s.hire_date)}</div>
+    </div>
+  `;
+  profileOverlay.classList.add('open');
+}
+window.openStaffProfile = openStaffProfile;
+
+document.getElementById('closeProfile').addEventListener('click', ()=>profileOverlay.classList.remove('open'));
+document.getElementById('closeProfile2').addEventListener('click', ()=>profileOverlay.classList.remove('open'));
+
+document.getElementById('btnPrintProfile').addEventListener('click', async ()=>{
+  const {data:s, error} = await sb.from('staff').select('*').eq('staff_id', currentProfileStaffId).single();
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+
+  const today = new Date();
+  const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+  document.getElementById('staffPrintArea').innerHTML = `
+    <div style="background:var(--ink); color:#fff; padding:16px 20px; border-radius:8px 8px 0 0; text-align:center;">
+      <div style="font-family:'Noto Serif Lao',serif; font-weight:700; font-size:19px;">ໂຮງຮຽນອະນຸບານ ແລະ ສາມັນສຶກສາ ດວງປັນຍາ</div>
+      <div style="font-size:13px; font-weight:600; color:#C9CEDC;">DOUANGPANYA KINDERGARTEN AND GENERAL EDUCATION SCHOOL</div>
+    </div>
+    <div style="text-align:center; font-weight:700; font-size:16px; margin:0 0 14px; padding:8px 0; background:var(--stamp); color:#fff; border-radius:0 0 8px 8px;">ປະຫວັດຄູ/ພະນັກງານ</div>
+    <div style="font-size:12px; text-align:right; color:#666; margin-bottom:10px;">ພິມວັນທີ: ${dateStr}</div>
+    <div style="display:flex; gap:16px; margin-bottom:16px;">
+      ${s.photo_url ? `<img src="${s.photo_url}" style="width:100px;height:120px;object-fit:cover;border:1px solid #ccc;">` : ''}
+      <div>
+        <div style="font-size:17px; font-weight:700;">${esc(s.first_name)} ${esc(s.last_name)}</div>
+        <div style="font-size:13px; color:#555;">${esc(s.staff_code)} · ${esc(s.position||'-')} · ${esc(s.department||'-')}</div>
+        <div style="font-size:13px; color:#555;">ສະຖານະ: ${s.status==='active'?'ປະຈຳການ':'ພົ້ນຕຳແໜ່ງ'}</div>
+      </div>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5; width:30%;">ເພດ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.gender||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ວັນເດືອນປີເກີດ</td><td style="padding:5px; border:1px solid #ccc;">${s.date_of_birth||'-'}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ເບີໂທ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.phone||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ບ້ານເກີດ</td><td style="padding:5px; border:1px solid #ccc;">${esc([s.birth_village,s.birth_district,s.birth_province].filter(Boolean).join(', ')||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ບ້ານປັດຈຸບັນ</td><td style="padding:5px; border:1px solid #ccc;">${esc([s.current_village,s.current_district,s.current_province].filter(Boolean).join(', ')||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ລະດັບການສຶກສາ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.education_level||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ສາຍທີ່ຈົບ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.major||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ໜ້າທີ່ຮັບຜິດຊອບ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.responsibility_note||'-')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ວັນທີ່ເລີ່ມວຽກ</td><td style="padding:5px; border:1px solid #ccc;">${s.hire_date||'-'}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ອາຍຸການ</td><td style="padding:5px; border:1px solid #ccc;">${computeTenure(s.hire_date)}</td></tr>
+    </table>
+    <div style="display:flex; justify-content:space-between; margin-top:70px; font-size:13px; text-align:center;">
+      <div>ຜູ້ຄິດໄລ່/HR<br><br><br>( ລາຍເຊັນ ແລະ ຊື່ແຈ້ງ )</div>
+      <div>ຜູ້ອຳນວຍການ<br><br><br>( ລາຍເຊັນ ແລະ ປະທັບຕາ )</div>
+    </div>
+  `;
+  document.body.classList.add('printing-staff');
+  window.print();
+});
+
+document.getElementById('btnPrintStaffReport').addEventListener('click', async ()=>{
+  const {data, error} = await sb.from('staff').select('*').order('first_name');
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+
+  const today = new Date();
+  const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  const statusLabel = {active:'ປະຈຳການ', inactive:'ພົ້ນຕຳແໜ່ງ'};
+
+  const rowsHtml = (data||[]).map((s,i)=>`
+    <tr style="${i%2? 'background:#F7F3EA;':''}">
+      <td style="border:1px solid #ccc; padding:5px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(s.staff_code)}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(s.first_name)} ${esc(s.last_name)}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(s.position||'-')}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(s.department||'-')}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(s.education_level||'-')}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${s.hire_date||'-'}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${computeTenure(s.hire_date)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:center;">${statusLabel[s.status]||s.status}</td>
+    </tr>`).join('');
+
+  document.getElementById('staffPrintArea').innerHTML = `
+    <div style="background:var(--ink); color:#fff; padding:16px 20px; border-radius:8px 8px 0 0; text-align:center;">
+      <div style="font-family:'Noto Serif Lao',serif; font-weight:700; font-size:19px;">ໂຮງຮຽນອະນຸບານ ແລະ ສາມັນສຶກສາ ດວງປັນຍາ</div>
+      <div style="font-size:13px; font-weight:600; color:#C9CEDC;">DOUANGPANYA KINDERGARTEN AND GENERAL EDUCATION SCHOOL</div>
+    </div>
+    <div style="text-align:center; font-weight:700; font-size:16px; margin:0 0 14px; padding:8px 0; background:var(--stamp); color:#fff; border-radius:0 0 8px 8px;">ລາຍງານລວມ ຄູ-ພະນັກງານ</div>
+    <div style="font-size:12px; text-align:right; color:#666; margin-bottom:10px;">ພິມວັນທີ: ${dateStr} · ທັງໝົດ ${(data||[]).length} ຄົນ</div>
+    <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+      <thead><tr style="background:var(--ink); color:#fff;">
+        <th style="border:1px solid #ccc; padding:6px;">#</th>
+        <th style="border:1px solid #ccc; padding:6px;">ລະຫັດ</th>
+        <th style="border:1px solid #ccc; padding:6px; text-align:left;">ຊື່-ນາມສະກຸນ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ຕຳແໜ່ງ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ພະແນກ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ການສຶກສາ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ວັນເລີ່ມວຽກ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ອາຍຸການ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ສະຖານະ</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+  document.body.classList.add('printing-staff');
+  window.print();
+});
+
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('printing-staff');
 });
 
 (async function init(){
