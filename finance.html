@@ -61,6 +61,7 @@
   .badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid currentColor;}
   .badge.paid{color:var(--ok);} .badge.partial{color:var(--gold);} .badge.unpaid{color:var(--stamp);} .badge.waived{color:var(--ink-soft);}
   .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
+  .row-actions{display:flex; gap:6px;}
   .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
   .overlay.open{display:flex;}
   .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:480px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
@@ -121,15 +122,17 @@
           <option value="ປີ"></option>
         </datalist>
         <button class="btn stamp" id="btnAddFeeType">+ ເພີ່ມ</button>
+        <button class="btn secondary" id="btnCancelFeeTypeEdit" style="display:none;">ຍົກເລີກແກ້ໄຂ</button>
       </div>
       <table><thead><tr><th>ຊື່ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th></th></tr></thead><tbody id="feeTypeBody"></tbody></table>
     </div>
 
     <div class="card">
-      <div class="section-title">ກຳນົດຈຳນວນເງິນຕາມຊັ້ນ/ປີ</div>
+      <div class="section-title">ກຳນົດຈຳນວນເງິນຕາມຊັ້ນ/ປີ (ສາມາດກຳນົດເປັນໄລຍະຊັ້ນໄດ້)</div>
       <div class="steps">
         <div><label>ປະເພດຄ່າທຳນຽມ</label><select id="fs_type"></select></div>
-        <div><label>ຊັ້ນຮຽນ</label><select id="fs_grade"></select></div>
+        <div><label>ຊັ້ນເລີ່ມຕົ້ນ</label><select id="fs_grade_start"></select></div>
+        <div><label>ຊັ້ນສຸດທ້າຍ</label><select id="fs_grade_end"></select></div>
         <div><label>ປີການສຶກສາ</label><select id="fs_year"></select></div>
         <div><label>ລາຄາຕໍ່ຫົວໜ່ວຍ (ກີບ)</label><input type="number" id="fs_amount" min="0"></div>
         <div><label>ຈຳນວນ</label><input type="number" id="fs_qty" min="0.01" step="0.01" value="1"></div>
@@ -215,7 +218,7 @@ async function loadReferenceData(){
     sb.from('academic_years').select('*').order('start_date',{ascending:false}),
     sb.from('classrooms').select('*'),
     sb.from('fee_types').select('*').order('fee_name'),
-    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), grade_levels(grade_name), academic_years(year_name)')
+    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), grade_levels(grade_name), grade_start:grade_levels!fee_structure_grade_start_id_fkey(grade_name, grade_order), grade_end:grade_levels!fee_structure_grade_end_id_fkey(grade_name, grade_order), academic_years(year_name)')
   ]);
   grades=g||[]; years=y||[]; classrooms=c||[]; feeTypes=ft||[]; feeStructures=fs||[];
   buildSelects();
@@ -229,34 +232,101 @@ function classroomLabel(c){
 }
 
 function buildSelects(){
-  document.getElementById('fs_type').innerHTML = feeTypes.map(f=>`<option value="${f.fee_type_id}">${esc(f.fee_name)} (${esc(f.billing_unit||'ຄັ້ງດຽວ')})</option>`).join('');
-  document.getElementById('fs_grade').innerHTML = grades.map(g=>`<option value="${g.grade_id}">${g.grade_name}</option>`).join('');
+  document.getElementById('fs_type').innerHTML = feeTypes.map(f=>`<option value="${f.fee_type_id}">${esc(f.fee_name)} (${esc(f.billing_unit||'-')})</option>`).join('');
+  const gradeOpts = grades.map(g=>`<option value="${g.grade_id}">${g.grade_name}</option>`).join('');
+  document.getElementById('fs_grade_start').innerHTML = gradeOpts;
+  document.getElementById('fs_grade_end').innerHTML = gradeOpts;
   document.getElementById('fs_year').innerHTML = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
   document.getElementById('inv_classroom').innerHTML = classrooms.map(c=>`<option value="${c.classroom_id}">${classroomLabel(c)}</option>`).join('');
-  document.getElementById('inv_feestructure').innerHTML = feeStructures.map(f=>`<option value="${f.fee_structure_id}">${esc(f.fee_types?.fee_name)} (${esc(f.fee_types?.billing_unit||'-')} × ${f.quantity||1}) - ${esc(f.grade_levels?.grade_name)} (${esc(f.academic_years?.year_name)}) - ${fmtMoney(f.amount * (f.quantity||1))} ກີບ</option>`).join('');
+  refreshInvFeeStructureOptions();
 }
 
+function gradeRangeLabel(f){
+  if(f.grade_start){
+    const endName = f.grade_end ? f.grade_end.grade_name : f.grade_start.grade_name;
+    return f.grade_start.grade_name === endName ? f.grade_start.grade_name : `${f.grade_start.grade_name} - ${endName}`;
+  }
+  return f.grade_levels?.grade_name || '-';
+}
+
+function feeStructureAppliesToGrade(f, gradeId){
+  const grade = grades.find(g=>String(g.grade_id)===String(gradeId));
+  if(!grade) return false;
+  if(f.grade_start && f.grade_end){
+    return grade.grade_order >= f.grade_start.grade_order && grade.grade_order <= f.grade_end.grade_order;
+  }
+  if(f.grade_start){
+    return grade.grade_order === f.grade_start.grade_order;
+  }
+  // fallback for old single-grade rows
+  return String(f.grade_id) === String(gradeId);
+}
+
+function refreshInvFeeStructureOptions(){
+  const classroomId = document.getElementById('inv_classroom').value;
+  const room = classrooms.find(c=>String(c.classroom_id)===String(classroomId));
+  const applicable = room ? feeStructures.filter(f=>feeStructureAppliesToGrade(f, room.grade_id)) : feeStructures;
+  document.getElementById('inv_feestructure').innerHTML = applicable.map(f=>`<option value="${f.fee_structure_id}">${esc(f.fee_types?.fee_name)} (${esc(f.fee_types?.billing_unit||'-')} × ${f.quantity||1}) - ${esc(gradeRangeLabel(f))} (${esc(f.academic_years?.year_name)}) - ${fmtMoney(f.amount * (f.quantity||1))} ກີບ</option>`).join('')
+    || `<option value="">ບໍ່ມີລາຍການສຳລັບຫ້ອງນີ້</option>`;
+}
+document.getElementById('inv_classroom').addEventListener('change', refreshInvFeeStructureOptions);
+
 // ---------- FEE TYPES ----------
+let editingFeeTypeId = null;
 function renderFeeTypes(){
   document.getElementById('feeTypeBody').innerHTML = feeTypes.map(f=>`
-    <tr><td>${esc(f.fee_name)}</td><td>${esc(f.billing_unit||'ຄັ້ງດຽວ')}</td><td><button class="btn small secondary" onclick="deleteFeeType(${f.fee_type_id})">✕</button></td></tr>`).join('')
+    <tr>
+      <td>${esc(f.fee_name)}</td>
+      <td>${esc(f.billing_unit||'-')}</td>
+      <td class="row-actions">
+        <button class="btn small secondary" onclick="editFeeType(${f.fee_type_id})">✎</button>
+        <button class="btn small secondary" style="color:var(--stamp); border-color:var(--stamp);" onclick="deleteFeeType(${f.fee_type_id})">✕</button>
+      </td>
+    </tr>`).join('')
     || `<tr><td colspan="3" class="empty">ຍັງບໍ່ມີປະເພດຄ່າທຳນຽມ</td></tr>`;
 }
+function editFeeType(id){
+  const f = feeTypes.find(x=>x.fee_type_id===id);
+  if(!f) return;
+  editingFeeTypeId = id;
+  document.getElementById('ft_name').value = f.fee_name;
+  document.getElementById('ft_unit').value = f.billing_unit || '';
+  document.getElementById('btnAddFeeType').textContent = 'ບັນທຶກການແກ້ໄຂ';
+  document.getElementById('btnCancelFeeTypeEdit').style.display = 'inline-block';
+}
+window.editFeeType = editFeeType;
+document.getElementById('btnCancelFeeTypeEdit').addEventListener('click', ()=>{
+  editingFeeTypeId = null;
+  document.getElementById('ft_name').value = '';
+  document.getElementById('ft_unit').value = '';
+  document.getElementById('btnAddFeeType').textContent = '+ ເພີ່ມ';
+  document.getElementById('btnCancelFeeTypeEdit').style.display = 'none';
+});
 document.getElementById('btnAddFeeType').addEventListener('click', async ()=>{
   const name = document.getElementById('ft_name').value.trim();
   const unit = document.getElementById('ft_unit').value.trim();
   if(!name){ toast('ກະລຸນາປ້ອນຊື່ປະເພດຄ່າທຳນຽມ'); return; }
   if(!unit){ toast('ກະລຸນາປ້ອນຫົວໜ່ວຍ'); return; }
-  const {error} = await sb.from('fee_types').insert({fee_name: name, billing_unit: unit});
+  let error;
+  if(editingFeeTypeId){
+    ({error} = await sb.from('fee_types').update({fee_name: name, billing_unit: unit}).eq('fee_type_id', editingFeeTypeId));
+  } else {
+    ({error} = await sb.from('fee_types').insert({fee_name: name, billing_unit: unit}));
+  }
   if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
   document.getElementById('ft_name').value = '';
   document.getElementById('ft_unit').value = '';
-  toast('ເພີ່ມສຳເລັດ');
+  document.getElementById('btnAddFeeType').textContent = '+ ເພີ່ມ';
+  document.getElementById('btnCancelFeeTypeEdit').style.display = 'none';
+  editingFeeTypeId = null;
+  toast('ບັນທຶກສຳເລັດ');
   loadReferenceData();
 });
 async function deleteFeeType(id){
+  if(!confirm('ຢືນຢັນລຶບປະເພດຄ່າທຳນຽມນີ້? ການກຳນົດຄ່າທຳນຽມ (ຕາມຊັ້ນ/ປີ) ທີ່ໃຊ້ປະເພດນີ້ຈະຖືກລຶບໄປພ້ອມກັນ')) return;
   const {error} = await sb.from('fee_types').delete().eq('fee_type_id', id);
   if(error){ toast('ລຶບຜິດພາດ: '+error.message); return; }
+  toast('ລຶບສຳເລັດ');
   loadReferenceData();
 }
 window.deleteFeeType = deleteFeeType;
@@ -268,23 +338,34 @@ function renderFeeStructures(){
     return `<tr>
       <td>${esc(f.fee_types?.fee_name)}</td>
       <td>${esc(f.fee_types?.billing_unit||'-')}</td>
-      <td>${esc(f.grade_levels?.grade_name)}</td>
+      <td>${esc(gradeRangeLabel(f))}</td>
       <td>${esc(f.academic_years?.year_name)}</td>
       <td>${fmtMoney(f.amount)} ກີບ</td>
       <td>${qty}</td>
       <td>${fmtMoney(f.amount * qty)} ກີບ</td>
-      <td><button class="btn small secondary" onclick="deleteFeeStructure(${f.fee_structure_id})">✕</button></td>
+      <td><button class="btn small secondary" style="color:var(--stamp); border-color:var(--stamp);" onclick="deleteFeeStructure(${f.fee_structure_id})">✕</button></td>
     </tr>`;
   }).join('') || `<tr><td colspan="8" class="empty">ຍັງບໍ່ມີການກຳນົດຄ່າທຳນຽມ</td></tr>`;
 }
 document.getElementById('btnAddFeeStructure').addEventListener('click', async ()=>{
   const fee_type_id = document.getElementById('fs_type').value;
-  const grade_id = document.getElementById('fs_grade').value;
+  const grade_start_id = document.getElementById('fs_grade_start').value;
+  const grade_end_id = document.getElementById('fs_grade_end').value;
   const academic_year_id = document.getElementById('fs_year').value;
   const amount = document.getElementById('fs_amount').value;
   const quantity = document.getElementById('fs_qty').value || 1;
-  if(!fee_type_id || !grade_id || !academic_year_id || !amount){ toast('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບ'); return; }
-  const {error} = await sb.from('fee_structure').insert({fee_type_id, grade_id, academic_year_id, amount: parseFloat(amount), quantity: parseFloat(quantity)});
+  if(!fee_type_id || !grade_start_id || !grade_end_id || !academic_year_id || !amount){ toast('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບ'); return; }
+
+  const startGrade = grades.find(g=>String(g.grade_id)===String(grade_start_id));
+  const endGrade = grades.find(g=>String(g.grade_id)===String(grade_end_id));
+  if(startGrade && endGrade && startGrade.grade_order > endGrade.grade_order){
+    toast('ຊັ້ນເລີ່ມຕົ້ນຕ້ອງມາກ່ອນ ຫຼື ເທົ່າກັບ ຊັ້ນສຸດທ້າຍ'); return;
+  }
+
+  const {error} = await sb.from('fee_structure').insert({
+    fee_type_id, grade_start_id, grade_end_id, grade_id: grade_start_id,
+    academic_year_id, amount: parseFloat(amount), quantity: parseFloat(quantity)
+  });
   if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
   document.getElementById('fs_amount').value = '';
   document.getElementById('fs_qty').value = '1';
