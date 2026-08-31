@@ -10,31 +10,55 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
-    --paper:#F7F3EA;
-    --paper-2:#EFE8D8;
-    --ink:#1D2B4F;
+    --paper:#F5F2EA;
+    --paper-2:#EAE3D2;
+    --ink:#16233F;
     --ink-soft:#4A5570;
     --stamp:#A83232;
     --gold:#B8912A;
+    --emerald:#1F6E52;
     --line:#D8D2C4;
     --ok:#2F6B3A;
-    --white:#FFFDF8;
-    --radius:6px;
+    --white:#FFFFFF;
+    --radius:8px;
+    --sidebar-w:225px;
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans Lao','Noto Sans',sans-serif; min-height:100vh;}
-  header.book-header{background:var(--ink); color:var(--paper); padding:28px 32px 22px; position:relative; border-bottom:4px double var(--gold);}
-  header.book-header h1{font-family:'Noto Serif Lao',serif; font-weight:700; font-size:26px; margin:0 0 4px; letter-spacing:.5px;}
-  header.book-header p{margin:0; font-size:14px; color:#C9CEDC;}
-  .lang-switch{position:absolute; right:32px; top:26px; display:flex; border:1px solid var(--gold); border-radius:20px; overflow:hidden;}
-  .lang-switch button{font-family:'Noto Sans Lao',sans-serif; font-size:12px; font-weight:700; padding:6px 14px; background:transparent; border:none; color:#C9CEDC; cursor:pointer;}
-  .lang-switch button.active{background:var(--gold); color:var(--ink);}
-  nav.tabs{display:flex; gap:2px; background:var(--paper-2); padding:0 32px; border-bottom:1px solid var(--line);}
-  nav.tabs button{font-family:'Noto Sans Lao',sans-serif; font-size:15px; font-weight:600; padding:14px 22px; background:transparent; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; position:relative; top:1px;}
-  nav.tabs button.active{color:var(--ink); border-bottom:3px solid var(--stamp); background:var(--paper);}
-  main{padding:28px 32px 60px; max-width:1150px; margin:0 auto;}
+  .app-shell{display:flex; min-height:100vh;}
+  .sidebar{width:var(--sidebar-w); flex-shrink:0; background:linear-gradient(180deg,#16233F 0%,#0E1830 100%); color:var(--paper); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; box-shadow:2px 0 14px rgba(0,0,0,.15); z-index:10;}
+  .sidebar-brand{display:flex; align-items:center; gap:11px; padding:22px 18px; border-bottom:1px solid rgba(255,255,255,.12);}
+  .sidebar-seal{width:40px; height:40px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Noto Serif Lao',serif; font-size:10px; text-align:center; line-height:1.1; color:var(--gold); flex-shrink:0;}
+  .sidebar-brand .brand-text strong{display:block; font-family:'Noto Serif Lao',serif; font-size:14px; font-weight:700; color:#fff;}
+  .sidebar-brand .brand-text span{font-size:11px; color:#93A0BE;}
+  .side-nav{padding:14px 10px; flex:1; display:flex; flex-direction:column; gap:3px;}
+  .side-link{display:flex; align-items:center; gap:11px; padding:12px 13px; color:#B7C0D6; text-decoration:none; font-weight:600; font-size:14px; border-radius:8px; transition:background .15s, color .15s;}
+  .side-link svg{width:18px; height:18px; flex-shrink:0;}
+  .side-link:hover{background:rgba(255,255,255,.07); color:#fff;}
+  .side-link.active{background:rgba(184,145,42,.20); color:#fff;}
+  .side-link.active svg{color:var(--gold);}
+  .sidebar-foot{padding:14px 20px; font-size:10.5px; color:#7B87A6; border-top:1px solid rgba(255,255,255,.1);}
+  .app-main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .page-header{background:var(--white); padding:22px 32px; border-bottom:1px solid var(--line); position:relative; box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .page-header h1{font-family:'Noto Serif Lao',serif; font-weight:700; font-size:23px; margin:0 0 3px; color:var(--ink);}
+  .page-header p{margin:0; font-size:13px; color:var(--ink-soft);}
+  .lang-switch{position:absolute; right:32px; top:24px; display:flex; border:1px solid var(--gold); border-radius:20px; overflow:hidden;}
+  .lang-switch button{font-family:'Noto Sans Lao',sans-serif; font-size:12px; font-weight:700; padding:6px 14px; background:transparent; border:none; color:var(--ink-soft); cursor:pointer;}
+  .lang-switch button.active{background:var(--gold); color:#fff;}
+  nav.tabs{display:flex; gap:2px; background:var(--white); padding:0 32px; border-bottom:1px solid var(--line);}
+  nav.tabs button{font-family:'Noto Sans Lao',sans-serif; font-size:14px; font-weight:600; padding:14px 20px; background:transparent; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; position:relative; top:1px;}
+  nav.tabs button.active{color:var(--ink); border-bottom:3px solid var(--stamp);}
+  main{padding:26px 32px 60px; max-width:1150px; width:100%; margin:0 auto;}
   .panel{display:none;}
   .panel.active{display:block;}
+  @media(max-width:860px){
+    .app-shell{flex-direction:column;}
+    .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
+    .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-link{white-space:nowrap;}
+    .sidebar-foot{display:none;}
+  }
   .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
   .toolbar input, .toolbar select{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
   .toolbar input[type=text]{flex:1; min-width:220px;}
@@ -43,7 +67,7 @@
   .btn.stamp{background:var(--stamp); border-color:var(--stamp); color:#fff;}
   .btn.small{padding:6px 10px; font-size:12px;}
   .btn:hover{opacity:.9;}
-  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
@@ -115,7 +139,22 @@
 </head>
 <body>
 
-<header class="book-header">
+<div class="app-shell">
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-seal">ຮຮ</div>
+    <div class="brand-text"><strong>ລະບົບບໍລິຫານ</strong><span>ໂຮງຮຽນ</span></div>
+  </div>
+  <nav class="side-nav">
+    <a href="index.html" class="side-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2.5 0 4.5-2 4.5-4.5S14.5 3 12 3 7.5 5 7.5 7.5 9.5 12 12 12z"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>ນັກຮຽນ</a>
+    <a href="staff.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c0-1.7 1.3-3 3-3s3 1.3 3 3"/><path d="M14 9h4M14 13h4"/></svg>ຄູ-ພະນັກງານ</a>
+    <a href="academic.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ວິຊາການ</a>
+    <a href="finance.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 .9 3 2.2c0 2.8-6 1.3-6 4.1 0 1.3 1.3 2.2 3 2.2s3-1.1 3-2.5"/></svg>ການເງິນ</a>
+  </nav>
+  <div class="sidebar-foot">ພັດທະນາໂດຍ SVKSEZ</div>
+</aside>
+<div class="app-main">
+<header class="page-header">
   <div class="lang-switch">
     <button id="langLo" class="active" data-lang="lo">ລາວ</button>
     <button id="langEn" data-lang="en">EN</button>
@@ -145,10 +184,12 @@
       </select>
       <button class="btn stamp" id="btnAddStudent" data-i18n="addStudent">+ ເພີ່ມນັກຮຽນ</button>
       <button class="btn secondary" id="btnBulkImport" data-i18n="bulkImport">ນຳເຂົ້າ Excel/ຮູບ</button>
+      <button class="btn secondary" id="btnDeleteSelected" data-i18n="deleteSelected" disabled style="border-color:var(--stamp); color:var(--stamp);">ລຶບທີ່ເລືອກ</button>
     </div>
     <table>
       <thead>
         <tr>
+          <th><input type="checkbox" id="selectAllStudents"></th>
           <th></th>
           <th data-i18n="colCode">ລະຫັດ</th>
           <th data-i18n="colName">ຊື່-ນາມສະກຸນ</th>
@@ -178,18 +219,26 @@
       <div class="empty" data-i18n="chooseFirst">ກະລຸນາເລືອກ ປີ → ຊັ້ນ → ຫ້ອງ ກ່ອນ</div>
     </div>
     <h3 class="enrolled-title" data-i18n="alreadyEnrolled">ນັກຮຽນທີ່ລົງທະບຽນແລ້ວໃນຫ້ອງນີ້</h3>
+    <div class="toolbar">
+      <button class="btn secondary" id="btnUnenrollSelected" data-i18n="unenrollSelected" disabled style="border-color:var(--stamp); color:var(--stamp);">ຍົກເລີກລົງທະບຽນທີ່ເລືອກ</button>
+    </div>
     <table>
       <thead><tr>
+        <th><input type="checkbox" id="selectAllEnrolled"></th>
         <th data-i18n="colCode">ລະຫັດ</th>
         <th data-i18n="colName">ຊື່-ນາມສະກຸນ</th>
         <th data-i18n="colEnrollDate">ວັນທີ່ລົງທະບຽນ</th>
         <th data-i18n="colStatus">ສະຖານະ</th>
+        <th></th>
       </tr></thead>
       <tbody id="enrolledBody"></tbody>
     </table>
   </section>
 
 </main>
+
+</div>
+</div>
 
 <!-- ===== STUDENT ADD/EDIT MODAL ===== -->
 <div class="overlay" id="studentOverlay">
@@ -472,7 +521,17 @@ const I18N = {
     photoMatched: (n)=>`ຈັບຄູ່ໄດ້ ${n} ຮູບ`,
     photoUnmatched: "ບໍ່ພົບລະຫັດນັກຮຽນນີ້",
     photoUploading: (done,total)=>`ກຳລັງອັບໂຫລດ ${done}/${total} ...`,
-    photoUploadDone: (n)=>`ອັບໂຫລດສຳເລັດ ${n} ຮູບ`
+    photoUploadDone: (n)=>`ອັບໂຫລດສຳເລັດ ${n} ຮູບ`,
+    photoUploadPartial: (ok,failed)=>`ອັບໂຫລດສຳເລັດ ${ok} ຮູບ, ລົ້ມເຫຼວ ${failed} ຮູບ (ອາດຍ້ອນຍັງບໍ່ໄດ້ຕັ້ງ Storage policy)`,
+    deleteSelected: "ລຶບທີ່ເລືອກ",
+    confirmDeleteOne: "ຢືນຢັນລຶບນັກຮຽນຄົນນີ້? ຂໍ້ມູນທັງໝົດ (ລົງທະບຽນ, ຄະແນນ, ການເຂົ້າຮຽນ, ໃບແຈ້ງໜີ້) ຈະຖືກລຶບໄປພ້ອມກັນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້",
+    confirmDeleteMany: (n)=>`ຢືນຢັນລຶບນັກຮຽນ ${n} ຄົນທີ່ເລືອກ? ຂໍ້ມູນທັງໝົດຈະຖືກລຶບໄປພ້ອມກັນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້`,
+    deleteError: "ລຶບຜິດພາດ: ",
+    deleteSuccess: "ລຶບສຳເລັດ",
+    unenrollSelected: "ຍົກເລີກລົງທະບຽນທີ່ເລືອກ",
+    confirmUnenrollOne: "ຢືນຢັນຍົກເລີກລົງທະບຽນນັກຮຽນຄົນນີ້ອອກຈາກຫ້ອງນີ້? (ຂໍ້ມູນນັກຮຽນ ແລະ ຄະແນນຍັງຄົງຢູ່, ລຶບແຕ່ການລົງທະບຽນຫ້ອງນີ້ເທົ່ານັ້ນ)",
+    confirmUnenrollMany: (n)=>`ຢືນຢັນຍົກເລີກລົງທະບຽນ ${n} ຄົນທີ່ເລືອກອອກຈາກຫ້ອງນີ້?`,
+    unenrollSuccess: "ຍົກເລີກລົງທະບຽນສຳເລັດ"
   },
   en: {
     pageTitle: "Student Registry | School Management System",
@@ -575,7 +634,17 @@ const I18N = {
     photoMatched: (n)=>`${n} photo(s) matched`,
     photoUnmatched: "Student code not found",
     photoUploading: (done,total)=>`Uploading ${done}/${total} ...`,
-    photoUploadDone: (n)=>`Successfully uploaded ${n} photo(s)`
+    photoUploadDone: (n)=>`Successfully uploaded ${n} photo(s)`,
+    photoUploadPartial: (ok,failed)=>`Uploaded ${ok} photo(s), ${failed} failed (Storage policy may not be set up yet)`,
+    deleteSelected: "Delete Selected",
+    confirmDeleteOne: "Delete this student? All related data (enrollment, scores, attendance, invoices) will be deleted too and cannot be recovered",
+    confirmDeleteMany: (n)=>`Delete ${n} selected student(s)? All related data will be deleted too and cannot be recovered`,
+    deleteError: "Error deleting: ",
+    deleteSuccess: "Deleted successfully",
+    unenrollSelected: "Unenroll Selected",
+    confirmUnenrollOne: "Unenroll this student from this classroom? (Student data and scores remain — only this classroom enrollment is removed)",
+    confirmUnenrollMany: (n)=>`Unenroll ${n} selected student(s) from this classroom?`,
+    unenrollSuccess: "Unenrolled successfully"
   }
 };
 let currentLang = 'lo';
@@ -796,6 +865,7 @@ async function loadStudents(){
 
     body.innerHTML += `
       <tr>
+        <td><input type="checkbox" class="student-select" value="${s.student_id}" onchange="updateDeleteButtonState()"></td>
         <td>${s.photo_url ? `<img class="avatar" src="${s.photo_url}">` : `<div class="avatar"></div>`}</td>
         <td>${esc(s.student_code)}</td>
         <td>
@@ -805,16 +875,51 @@ async function loadStudents(){
         <td>${s.date_of_birth || '-'}</td>
         <td>${gradeName} ${roomName!=='-' ? '('+roomName+')' : ''}</td>
         <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
-        <td class="row-actions"><button class="btn small secondary" onclick="openEditStudent(${s.student_id})">✎</button></td>
+        <td class="row-actions">
+          <button class="btn small secondary" onclick="openEditStudent(${s.student_id})">✎</button>
+          <button class="btn small secondary" style="color:var(--stamp); border-color:var(--stamp);" onclick="deleteStudent(${s.student_id})">🗑</button>
+        </td>
       </tr>`;
   });
 
   document.getElementById('studentsEmpty').style.display = shown ? 'none' : 'block';
+  document.getElementById('selectAllStudents').checked = false;
+  updateDeleteButtonState();
 }
 
 document.getElementById('searchInput').addEventListener('input', loadStudents);
 document.getElementById('filterGrade').addEventListener('change', loadStudents);
 document.getElementById('filterStatus').addEventListener('change', loadStudents);
+
+// ---------- DELETE ----------
+document.getElementById('selectAllStudents').addEventListener('change', (e)=>{
+  document.querySelectorAll('.student-select').forEach(cb => cb.checked = e.target.checked);
+  updateDeleteButtonState();
+});
+function updateDeleteButtonState(){
+  const anyChecked = document.querySelectorAll('.student-select:checked').length > 0;
+  document.getElementById('btnDeleteSelected').disabled = !anyChecked;
+}
+window.updateDeleteButtonState = updateDeleteButtonState;
+
+async function deleteStudent(id){
+  if(!confirm(t('confirmDeleteOne'))) return;
+  const {error} = await sb.from('students').delete().eq('student_id', id);
+  if(error){ toast(t('deleteError')+error.message); return; }
+  toast(t('deleteSuccess'));
+  loadStudents();
+}
+window.deleteStudent = deleteStudent;
+
+document.getElementById('btnDeleteSelected').addEventListener('click', async ()=>{
+  const ids = Array.from(document.querySelectorAll('.student-select:checked')).map(cb=>cb.value);
+  if(ids.length===0) return;
+  if(!confirm(t('confirmDeleteMany')(ids.length))) return;
+  const {error} = await sb.from('students').delete().in('student_id', ids);
+  if(error){ toast(t('deleteError')+error.message); return; }
+  toast(t('deleteSuccess'));
+  loadStudents();
+});
 
 // ---------- STUDENT ADD/EDIT MODAL ----------
 const overlay = document.getElementById('studentOverlay');
@@ -1245,7 +1350,7 @@ document.getElementById('photoBulkInput').addEventListener('change', async (e)=>
 document.getElementById('btnConfirmPhotoImport').addEventListener('click', async ()=>{
   const progress = document.getElementById('photoProgress');
   document.getElementById('btnConfirmPhotoImport').disabled = true;
-  let done = 0;
+  let ok = 0, failed = 0, firstError = '';
 
   for(const {file, student} of matchedPhotoFiles){
     const ext = file.name.split('.').pop();
@@ -1253,14 +1358,21 @@ document.getElementById('btnConfirmPhotoImport').addEventListener('click', async
     const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, file, {upsert:true});
     if(!upErr){
       const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-      await sb.from('students').update({photo_url: pub.publicUrl}).eq('student_id', student.student_id);
+      const {error: updErr} = await sb.from('students').update({photo_url: pub.publicUrl}).eq('student_id', student.student_id);
+      if(!updErr){ ok++; } else { failed++; if(!firstError) firstError = updErr.message; }
+    } else {
+      failed++; if(!firstError) firstError = upErr.message;
     }
-    done++;
-    progress.textContent = t('photoUploading')(done, matchedPhotoFiles.length);
+    progress.textContent = t('photoUploading')(ok+failed, matchedPhotoFiles.length);
   }
 
-  progress.textContent = t('photoUploadDone')(done);
-  toast(t('photoUploadDone')(done));
+  if(failed>0){
+    progress.textContent = t('photoUploadPartial')(ok, failed);
+    toast(t('photoUploadPartial')(ok, failed) + (firstError ? ' — ' + firstError : ''));
+  } else {
+    progress.textContent = t('photoUploadDone')(ok);
+    toast(t('photoUploadDone')(ok));
+  }
   loadStudents();
 });
 
@@ -1279,6 +1391,38 @@ document.getElementById('enrollYear').addEventListener('change', refreshEnrollCl
 document.getElementById('enrollGrade').addEventListener('change', refreshEnrollClassroomOptions);
 document.getElementById('enrollClassroom').addEventListener('change', loadEnrollmentPanel);
 document.getElementById('enrollSearch').addEventListener('input', renderEnrollList);
+
+// ---------- UNENROLL ----------
+document.getElementById('selectAllEnrolled').addEventListener('change', (e)=>{
+  document.querySelectorAll('.enrolled-select').forEach(cb => cb.checked = e.target.checked);
+  updateUnenrollButtonState();
+});
+function updateUnenrollButtonState(){
+  const anyChecked = document.querySelectorAll('.enrolled-select:checked').length > 0;
+  document.getElementById('btnUnenrollSelected').disabled = !anyChecked;
+}
+window.updateUnenrollButtonState = updateUnenrollButtonState;
+
+async function unenrollStudent(enrollmentId){
+  if(!confirm(t('confirmUnenrollOne'))) return;
+  const {error} = await sb.from('student_enrollments').delete().eq('enrollment_id', enrollmentId);
+  if(error){ toast(t('deleteError')+error.message); return; }
+  toast(t('unenrollSuccess'));
+  loadEnrollmentPanel();
+  loadStudents();
+}
+window.unenrollStudent = unenrollStudent;
+
+document.getElementById('btnUnenrollSelected').addEventListener('click', async ()=>{
+  const ids = Array.from(document.querySelectorAll('.enrolled-select:checked')).map(cb=>cb.value);
+  if(ids.length===0) return;
+  if(!confirm(t('confirmUnenrollMany')(ids.length))) return;
+  const {error} = await sb.from('student_enrollments').delete().in('enrollment_id', ids);
+  if(error){ toast(t('deleteError')+error.message); return; }
+  toast(t('unenrollSuccess'));
+  loadEnrollmentPanel();
+  loadStudents();
+});
 
 let allStudentsCache = [];
 let enrollableStudents = [];
@@ -1305,11 +1449,15 @@ async function loadEnrollmentPanel(){
   const enrolledBody = document.getElementById('enrolledBody');
   enrolledBody.innerHTML = (enrolled||[]).map(e=>`
     <tr>
+      <td><input type="checkbox" class="enrolled-select" value="${e.enrollment_id}" onchange="updateUnenrollButtonState()"></td>
       <td>${e.students.student_code}</td>
       <td>${e.students.first_name} ${e.students.last_name}</td>
       <td>${e.enrollment_date || '-'}</td>
       <td><span class="badge active">${I18N[currentLang][statusKeyMap[e.enrollment_status]] || e.enrollment_status}</span></td>
-    </tr>`).join('') || `<tr><td colspan="4" class="empty">${t('noEnrolled')}</td></tr>`;
+      <td><button class="btn small secondary" style="color:var(--stamp); border-color:var(--stamp);" onclick="unenrollStudent(${e.enrollment_id})">✕</button></td>
+    </tr>`).join('') || `<tr><td colspan="6" class="empty">${t('noEnrolled')}</td></tr>`;
+  document.getElementById('selectAllEnrolled').checked = false;
+  updateUnenrollButtonState();
 
   if(allStudentsCache.length===0){
     const {data:allS} = await sb.from('students').select('student_id, student_code, first_name, last_name').eq('status','active').order('student_code');
