@@ -50,12 +50,25 @@
   nav.tabs button.active{color:var(--ink); border-bottom:3px solid var(--stamp);}
   main{padding:26px 32px 60px; max-width:1150px; width:100%; margin:0 auto;}
   .print-meta{display:none;}
+  .classroom-summary{margin-bottom:18px;}
+  .classroom-summary table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .classroom-summary th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:8px 12px; border-bottom:1px solid var(--line);}
+  .classroom-summary td{padding:8px 12px; font-size:13.5px; border-bottom:1px solid var(--line);}
+  .classroom-summary tr:last-child td{border-bottom:none;}
   @media print{
-    .sidebar, nav.tabs, .toolbar, .btn, .row-actions, th:first-child, td:first-child, th:last-child, td:last-child{display:none !important;}
+    .sidebar, nav.tabs, .toolbar, .btn, .row-actions,
+    table.student-print-table th:first-child, table.student-print-table td:first-child,
+    table.student-print-table th:last-child, table.student-print-table td:last-child{display:none !important;}
     .app-shell{display:block;}
     .page-header{box-shadow:none; border-bottom:2px solid var(--ink);}
     main{padding:10px 0; max-width:100%;}
     .print-meta{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
+
+    body.print-profile-mode .sidebar, body.print-profile-mode nav.tabs,
+    body.print-profile-mode .page-header, body.print-profile-mode main{display:none !important;}
+    body.print-profile-mode #profileOverlay{display:flex !important; position:static !important; background:none !important; padding:0 !important;}
+    body.print-profile-mode #profileOverlay .modal{box-shadow:none !important; border:none !important; max-width:100% !important;}
+    body.print-profile-mode #profileOverlay .modal-head button, body.print-profile-mode #profileOverlay .modal-foot{display:none !important;}
   }
   .panel{display:none;}
   .panel.active{display:block;}
@@ -197,7 +210,8 @@
       <button class="btn secondary" id="btnDeleteSelected" data-i18n="deleteSelected" disabled style="border-color:var(--stamp); color:var(--stamp);">ລຶບທີ່ເລືອກ</button>
       <button class="btn secondary" id="btnPrintList">🖶 ພິມລາຍຊື່</button>
     </div>
-    <table>
+    <div class="classroom-summary" id="classroomSummary" style="display:none;"></div>
+    <table class="student-print-table">
       <thead>
         <tr>
           <th><input type="checkbox" id="selectAllStudents"></th>
@@ -358,6 +372,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn secondary" id="closeProfile2" data-i18n="close">ປິດ</button>
+      <button class="btn secondary" id="btnPrintProfile">🖶 ພິມ</button>
       <button class="btn stamp" id="editFromProfile" data-i18n="edit">ແກ້ໄຂຂໍ້ມູນ</button>
     </div>
   </div>
@@ -499,6 +514,9 @@ const I18N = {
     thYear: "ປີການສຶກສາ",
     thGrade: "ຊັ້ນ",
     thRoom: "ຫ້ອງ",
+    thTotal: "ຈຳນວນລວມ",
+    thFemaleCount: "ຍິງ",
+    thMaleCount: "ຊາຍ",
     thTeacher: "ອາຈານປະຈຳຫ້ອງ",
     thSubject: "ວິຊາ",
     thScore: "ຄະແນນສະເລ່ຍ",
@@ -612,6 +630,9 @@ const I18N = {
     thYear: "Academic Year",
     thGrade: "Grade",
     thRoom: "Classroom",
+    thTotal: "Total",
+    thFemaleCount: "Female",
+    thMaleCount: "Male",
     thTeacher: "Homeroom Teacher",
     thSubject: "Subject",
     thScore: "Average Score",
@@ -899,7 +920,45 @@ async function loadStudents(){
 }
 
 document.getElementById('searchInput').addEventListener('input', loadStudents);
-document.getElementById('filterGrade').addEventListener('change', loadStudents);
+document.getElementById('filterGrade').addEventListener('change', ()=>{ loadStudents(); loadClassroomSummary(); });
+
+// ---------- CLASSROOM SUMMARY (count, gender split, homeroom teacher) ----------
+async function loadClassroomSummary(){
+  const gradeId = document.getElementById('filterGrade').value;
+  const box = document.getElementById('classroomSummary');
+  if(!gradeId){ box.style.display = 'none'; box.innerHTML = ''; return; }
+
+  const currentYear = years.find(y=>y.is_current) || years[0];
+  if(!currentYear){ box.style.display = 'none'; return; }
+
+  const roomsForGrade = classrooms.filter(c => String(c.grade_id)===String(gradeId) && String(c.academic_year_id)===String(currentYear.academic_year_id));
+  if(roomsForGrade.length===0){ box.style.display = 'none'; box.innerHTML=''; return; }
+
+  const roomIds = roomsForGrade.map(r=>r.classroom_id);
+  const {data: enrolled} = await sb.from('student_enrollments')
+    .select('classroom_id, students(gender)')
+    .in('classroom_id', roomIds);
+
+  const {data: teacherRows} = await sb.from('staff').select('staff_id, first_name, last_name');
+  const teacherMap = {};
+  (teacherRows||[]).forEach(t=>{ teacherMap[t.staff_id] = `${t.first_name} ${t.last_name}`; });
+
+  const rows = roomsForGrade.map(room=>{
+    const inRoom = (enrolled||[]).filter(e=>e.classroom_id===room.classroom_id);
+    const male = inRoom.filter(e=>e.students?.gender==='ຊາຍ').length;
+    const female = inRoom.filter(e=>e.students?.gender==='ຍິງ').length;
+    const teacherName = room.homeroom_teacher_id ? (teacherMap[room.homeroom_teacher_id] || '-') : t('unknownTeacher');
+    return {room: room.room_name, total: male+female, male, female, teacher: teacherName};
+  });
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <table>
+      <thead><tr><th>${t('thRoom')}</th><th>${t('thTotal')}</th><th>${t('thFemaleCount')}</th><th>${t('thMaleCount')}</th><th>${t('thTeacher')}</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td>${esc(r.room)}</td><td>${r.total}</td><td>${r.female}</td><td>${r.male}</td><td>${esc(r.teacher)}</td></tr>`).join('')}</tbody>
+    </table>`;
+}
+
 document.getElementById('filterStatus').addEventListener('change', loadStudents);
 
 // ---------- DELETE ----------
@@ -1088,6 +1147,10 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
 const profileOverlay = document.getElementById('profileOverlay');
 document.getElementById('closeProfile').addEventListener('click', ()=>profileOverlay.classList.remove('open'));
 document.getElementById('closeProfile2').addEventListener('click', ()=>profileOverlay.classList.remove('open'));
+document.getElementById('btnPrintProfile').addEventListener('click', ()=>{
+  document.body.classList.add('print-profile-mode');
+  window.print();
+});
 document.getElementById('editFromProfile').addEventListener('click', ()=>{
   if(currentProfileStudentId) openEditStudent(currentProfileStudentId);
 });
@@ -1522,6 +1585,7 @@ document.getElementById('btnEnrollSelected').addEventListener('click', async ()=
   }
 
   await loadStudents();
+  loadClassroomSummary();
   loadAutocompleteData();
 })();
 
@@ -1531,6 +1595,10 @@ document.getElementById('btnPrintList').addEventListener('click', ()=>{
   const today = new Date().toLocaleDateString('lo-LA');
   document.getElementById('printMeta').textContent = `ຊັ້ນຮຽນ: ${gradeName}  •  ພິມວັນທີ: ${today}`;
   window.print();
+});
+
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('print-profile-mode');
 });
 </script>
 </body>
