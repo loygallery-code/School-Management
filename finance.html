@@ -108,13 +108,18 @@
     <div class="card">
       <div class="section-title">ປະເພດຄ່າທຳນຽມ</div>
       <div class="toolbar">
-        <input type="text" id="ft_name" placeholder="ຊື່ (ເຊັ່ນ ຄ່າຮຽນ, ຄ່າກິດຈະກຳ)">
-        <select id="ft_unit">
-          <option value="ຄັ້ງດຽວ">ຄັ້ງດຽວ (ຕໍ່ປີ)</option>
-          <option value="ລາຍເດືອນ">ລາຍເດືອນ</option>
-          <option value="ລາຍພາກຮຽນ">ລາຍພາກຮຽນ</option>
-          <option value="ລາຍປີ">ລາຍປີ</option>
-        </select>
+        <input type="text" id="ft_name" placeholder="ຊື່ (ເຊັ່ນ ຄ່າຮຽນ, ຊຸດກິລາ, ບິກ)">
+        <input type="text" id="ft_unit" placeholder="ຫົວໜ່ວຍ (ເຊັ່ນ ໂຕ, ຊຸດ, ຫົວ, ກ້ານ, ເດືອນ)" list="dl_unit">
+        <datalist id="dl_unit">
+          <option value="ໂຕ"></option>
+          <option value="ຊຸດ"></option>
+          <option value="ຫົວ"></option>
+          <option value="ກ້ານ"></option>
+          <option value="ອັນ"></option>
+          <option value="ເດືອນ"></option>
+          <option value="ພາກຮຽນ"></option>
+          <option value="ປີ"></option>
+        </datalist>
         <button class="btn stamp" id="btnAddFeeType">+ ເພີ່ມ</button>
       </div>
       <table><thead><tr><th>ຊື່ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th></th></tr></thead><tbody id="feeTypeBody"></tbody></table>
@@ -126,10 +131,11 @@
         <div><label>ປະເພດຄ່າທຳນຽມ</label><select id="fs_type"></select></div>
         <div><label>ຊັ້ນຮຽນ</label><select id="fs_grade"></select></div>
         <div><label>ປີການສຶກສາ</label><select id="fs_year"></select></div>
-        <div><label>ຈຳນວນເງິນ (ກີບ)</label><input type="number" id="fs_amount" min="0"></div>
+        <div><label>ລາຄາຕໍ່ຫົວໜ່ວຍ (ກີບ)</label><input type="number" id="fs_amount" min="0"></div>
+        <div><label>ຈຳນວນ</label><input type="number" id="fs_qty" min="0.01" step="0.01" value="1"></div>
       </div>
       <button class="btn stamp" id="btnAddFeeStructure">+ ກຳນົດຄ່າທຳນຽມ</button>
-      <table style="margin-top:16px;"><thead><tr><th>ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th>ຊັ້ນ</th><th>ປີ</th><th>ຈຳນວນເງິນ</th><th></th></tr></thead><tbody id="feeStructureBody"></tbody></table>
+      <table style="margin-top:16px;"><thead><tr><th>ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th>ຊັ້ນ</th><th>ປີ</th><th>ລາຄາ/ຫົວໜ່ວຍ</th><th>ຈຳນວນ</th><th>ລວມ</th><th></th></tr></thead><tbody id="feeStructureBody"></tbody></table>
     </div>
   </section>
 
@@ -227,7 +233,7 @@ function buildSelects(){
   document.getElementById('fs_grade').innerHTML = grades.map(g=>`<option value="${g.grade_id}">${g.grade_name}</option>`).join('');
   document.getElementById('fs_year').innerHTML = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
   document.getElementById('inv_classroom').innerHTML = classrooms.map(c=>`<option value="${c.classroom_id}">${classroomLabel(c)}</option>`).join('');
-  document.getElementById('inv_feestructure').innerHTML = feeStructures.map(f=>`<option value="${f.fee_structure_id}">${esc(f.fee_types?.fee_name)} (${esc(f.fee_types?.billing_unit||'ຄັ້ງດຽວ')}) - ${esc(f.grade_levels?.grade_name)} (${esc(f.academic_years?.year_name)}) - ${fmtMoney(f.amount)} ກີບ</option>`).join('');
+  document.getElementById('inv_feestructure').innerHTML = feeStructures.map(f=>`<option value="${f.fee_structure_id}">${esc(f.fee_types?.fee_name)} (${esc(f.fee_types?.billing_unit||'-')} × ${f.quantity||1}) - ${esc(f.grade_levels?.grade_name)} (${esc(f.academic_years?.year_name)}) - ${fmtMoney(f.amount * (f.quantity||1))} ກີບ</option>`).join('');
 }
 
 // ---------- FEE TYPES ----------
@@ -238,11 +244,13 @@ function renderFeeTypes(){
 }
 document.getElementById('btnAddFeeType').addEventListener('click', async ()=>{
   const name = document.getElementById('ft_name').value.trim();
-  const unit = document.getElementById('ft_unit').value;
+  const unit = document.getElementById('ft_unit').value.trim();
   if(!name){ toast('ກະລຸນາປ້ອນຊື່ປະເພດຄ່າທຳນຽມ'); return; }
+  if(!unit){ toast('ກະລຸນາປ້ອນຫົວໜ່ວຍ'); return; }
   const {error} = await sb.from('fee_types').insert({fee_name: name, billing_unit: unit});
   if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
   document.getElementById('ft_name').value = '';
+  document.getElementById('ft_unit').value = '';
   toast('ເພີ່ມສຳເລັດ');
   loadReferenceData();
 });
@@ -255,25 +263,31 @@ window.deleteFeeType = deleteFeeType;
 
 // ---------- FEE STRUCTURE ----------
 function renderFeeStructures(){
-  document.getElementById('feeStructureBody').innerHTML = feeStructures.map(f=>`
-    <tr>
+  document.getElementById('feeStructureBody').innerHTML = feeStructures.map(f=>{
+    const qty = f.quantity || 1;
+    return `<tr>
       <td>${esc(f.fee_types?.fee_name)}</td>
-      <td>${esc(f.fee_types?.billing_unit||'ຄັ້ງດຽວ')}</td>
+      <td>${esc(f.fee_types?.billing_unit||'-')}</td>
       <td>${esc(f.grade_levels?.grade_name)}</td>
       <td>${esc(f.academic_years?.year_name)}</td>
       <td>${fmtMoney(f.amount)} ກີບ</td>
+      <td>${qty}</td>
+      <td>${fmtMoney(f.amount * qty)} ກີບ</td>
       <td><button class="btn small secondary" onclick="deleteFeeStructure(${f.fee_structure_id})">✕</button></td>
-    </tr>`).join('') || `<tr><td colspan="6" class="empty">ຍັງບໍ່ມີການກຳນົດຄ່າທຳນຽມ</td></tr>`;
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty">ຍັງບໍ່ມີການກຳນົດຄ່າທຳນຽມ</td></tr>`;
 }
 document.getElementById('btnAddFeeStructure').addEventListener('click', async ()=>{
   const fee_type_id = document.getElementById('fs_type').value;
   const grade_id = document.getElementById('fs_grade').value;
   const academic_year_id = document.getElementById('fs_year').value;
   const amount = document.getElementById('fs_amount').value;
+  const quantity = document.getElementById('fs_qty').value || 1;
   if(!fee_type_id || !grade_id || !academic_year_id || !amount){ toast('ກະລຸນາຕື່ມຂໍ້ມູນໃຫ້ຄົບ'); return; }
-  const {error} = await sb.from('fee_structure').insert({fee_type_id, grade_id, academic_year_id, amount: parseFloat(amount)});
+  const {error} = await sb.from('fee_structure').insert({fee_type_id, grade_id, academic_year_id, amount: parseFloat(amount), quantity: parseFloat(quantity)});
   if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
   document.getElementById('fs_amount').value = '';
+  document.getElementById('fs_qty').value = '1';
   toast('ກຳນົດຄ່າທຳນຽມສຳເລັດ');
   loadReferenceData();
 });
@@ -299,7 +313,7 @@ document.getElementById('btnBulkInvoice').addEventListener('click', async ()=>{
   const already = new Set((existingInv||[]).map(i=>i.student_id));
 
   const toInsert = studentIds.filter(id=>!already.has(id)).map(id=>({
-    student_id: id, fee_structure_id: feeStructureId, amount_due: fs.amount, amount_paid: 0, status: 'unpaid'
+    student_id: id, fee_structure_id: feeStructureId, amount_due: fs.amount * (fs.quantity||1), amount_paid: 0, status: 'unpaid'
   }));
   if(toInsert.length===0){ toast('ທຸກຄົນມີໃບແຈ້ງໜີ້ນີ້ແລ້ວ'); return; }
 
