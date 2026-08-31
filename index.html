@@ -21,288 +21,80 @@
     --radius:6px;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'Noto Sans Lao','Noto Sans',sans-serif;
-    min-height:100vh;
-  }
-  header.book-header{
-    background:var(--ink);
-    color:var(--paper);
-    padding:28px 32px 22px;
-    position:relative;
-    border-bottom:4px double var(--gold);
-  }
-  header.book-header h1{
-    font-family:'Noto Serif Lao',serif;
-    font-weight:700;
-    font-size:26px;
-    margin:0 0 4px;
-    letter-spacing:.5px;
-  }
-  header.book-header p{
-    margin:0;
-    font-size:14px;
-    color:#C9CEDC;
-  }
-  .lang-switch{
-    position:absolute;
-    right:32px; top:26px;
-    display:flex;
-    border:1px solid var(--gold);
-    border-radius:20px;
-    overflow:hidden;
-  }
-  .lang-switch button{
-    font-family:'Noto Sans Lao',sans-serif;
-    font-size:12px;
-    font-weight:700;
-    padding:6px 14px;
-    background:transparent;
-    border:none;
-    color:#C9CEDC;
-    cursor:pointer;
-  }
-  .lang-switch button.active{
-    background:var(--gold);
-    color:var(--ink);
-  }
-  nav.tabs{
-    display:flex;
-    gap:2px;
-    background:var(--paper-2);
-    padding:0 32px;
-    border-bottom:1px solid var(--line);
-  }
-  nav.tabs button{
-    font-family:'Noto Sans Lao',sans-serif;
-    font-size:15px;
-    font-weight:600;
-    padding:14px 22px;
-    background:transparent;
-    border:none;
-    cursor:pointer;
-    color:var(--ink-soft);
-    border-bottom:3px solid transparent;
-    position:relative;
-    top:1px;
-  }
-  nav.tabs button.active{
-    color:var(--ink);
-    border-bottom:3px solid var(--stamp);
-    background:var(--paper);
-  }
-  main{padding:28px 32px 60px; max-width:1100px; margin:0 auto;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans Lao','Noto Sans',sans-serif; min-height:100vh;}
+  header.book-header{background:var(--ink); color:var(--paper); padding:28px 32px 22px; position:relative; border-bottom:4px double var(--gold);}
+  header.book-header h1{font-family:'Noto Serif Lao',serif; font-weight:700; font-size:26px; margin:0 0 4px; letter-spacing:.5px;}
+  header.book-header p{margin:0; font-size:14px; color:#C9CEDC;}
+  .lang-switch{position:absolute; right:32px; top:26px; display:flex; border:1px solid var(--gold); border-radius:20px; overflow:hidden;}
+  .lang-switch button{font-family:'Noto Sans Lao',sans-serif; font-size:12px; font-weight:700; padding:6px 14px; background:transparent; border:none; color:#C9CEDC; cursor:pointer;}
+  .lang-switch button.active{background:var(--gold); color:var(--ink);}
+  nav.tabs{display:flex; gap:2px; background:var(--paper-2); padding:0 32px; border-bottom:1px solid var(--line);}
+  nav.tabs button{font-family:'Noto Sans Lao',sans-serif; font-size:15px; font-weight:600; padding:14px 22px; background:transparent; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; position:relative; top:1px;}
+  nav.tabs button.active{color:var(--ink); border-bottom:3px solid var(--stamp); background:var(--paper);}
+  main{padding:28px 32px 60px; max-width:1150px; margin:0 auto;}
   .panel{display:none;}
   .panel.active{display:block;}
-
-  .toolbar{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-    align-items:center;
-    margin-bottom:18px;
-  }
-  .toolbar input, .toolbar select{
-    font-family:inherit;
-    font-size:14px;
-    padding:9px 12px;
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    background:var(--white);
-    color:var(--ink);
-  }
-  .toolbar input[type=text]{flex:1; min-width:180px;}
-  .btn{
-    font-family:'Noto Sans Lao',sans-serif;
-    font-weight:600;
-    font-size:14px;
-    padding:10px 18px;
-    border-radius:var(--radius);
-    border:1px solid var(--ink);
-    background:var(--ink);
-    color:var(--paper);
-    cursor:pointer;
-  }
-  .btn.secondary{
-    background:transparent;
-    color:var(--ink);
-  }
-  .btn.stamp{
-    background:var(--stamp);
-    border-color:var(--stamp);
-    color:#fff;
-  }
+  .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
+  .toolbar input, .toolbar select{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
+  .toolbar input[type=text]{flex:1; min-width:220px;}
+  .btn{font-family:'Noto Sans Lao',sans-serif; font-weight:600; font-size:14px; padding:10px 18px; border-radius:var(--radius); border:1px solid var(--ink); background:var(--ink); color:var(--paper); cursor:pointer;}
+  .btn.secondary{background:transparent; color:var(--ink);}
+  .btn.stamp{background:var(--stamp); border-color:var(--stamp); color:#fff;}
+  .btn.small{padding:6px 10px; font-size:12px;}
   .btn:hover{opacity:.9;}
-
-  table{
-    width:100%;
-    border-collapse:collapse;
-    background:var(--white);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    overflow:hidden;
-  }
-  th{
-    text-align:left;
-    font-size:12px;
-    letter-spacing:.5px;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    background:var(--paper-2);
-    padding:10px 12px;
-    border-bottom:1px solid var(--line);
-  }
-  td{
-    padding:10px 12px;
-    font-size:14px;
-    border-bottom:1px solid var(--line);
-    vertical-align:middle;
-  }
+  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
+  td{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
   tr:hover td{background:#FBF8F0;}
-  .avatar{
-    width:34px;height:34px;
-    border-radius:4px;
-    object-fit:cover;
-    background:var(--paper-2);
-    border:1px solid var(--line);
-  }
-  .badge{
-    display:inline-block;
-    font-size:11px;
-    font-weight:700;
-    padding:3px 9px;
-    border-radius:20px;
-    border:1px solid currentColor;
-  }
+  .avatar{width:34px;height:34px; border-radius:4px; object-fit:cover; background:var(--paper-2); border:1px solid var(--line);}
+  .name-link{cursor:pointer; color:var(--ink); font-weight:600; text-decoration:none;}
+  .name-link:hover{color:var(--stamp); text-decoration:underline;}
+  .name-en{display:block; font-size:12px; color:var(--ink-soft); font-weight:400;}
+  .badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid currentColor;}
   .badge.active{color:var(--ok);}
   .badge.transferred{color:var(--gold);}
   .badge.graduated{color:var(--ink-soft);}
-  .row-link{cursor:pointer;}
-
-  /* Modal */
-  .overlay{
-    display:none;
-    position:fixed; inset:0;
-    background:rgba(29,43,79,.45);
-    align-items:flex-start;
-    justify-content:center;
-    padding:40px 16px;
-    overflow-y:auto;
-    z-index:50;
-  }
+  .row-actions{display:flex; gap:6px;}
+  .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
   .overlay.open{display:flex;}
-  .modal{
-    background:var(--paper);
-    border:1px solid var(--line);
-    border-radius:8px;
-    width:100%; max-width:640px;
-    box-shadow:0 20px 50px rgba(0,0,0,.25);
-  }
-  .modal-head{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:18px 22px;
-    border-bottom:2px double var(--gold);
-    background:var(--ink);
-    color:var(--paper);
-    border-radius:8px 8px 0 0;
-  }
-  .modal-head h2{
-    font-family:'Noto Serif Lao',serif;
-    font-size:18px; margin:0;
-  }
-  .modal-head button{
-    background:none;border:none;color:var(--paper);
-    font-size:20px;cursor:pointer;
-  }
+  .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:680px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal.wide{max-width:820px;}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
+  .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
+  .modal-head button{background:none;border:none;color:var(--paper); font-size:20px;cursor:pointer;}
   .modal-body{padding:20px 22px;}
-  .form-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:14px 16px;
-  }
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;}
   .form-grid .full{grid-column:1/-1;}
-  label{
-    display:block;
-    font-size:12px;
-    font-weight:600;
-    color:var(--ink-soft);
-    margin-bottom:5px;
-  }
-  input, select{
-    width:100%;
-    font-family:inherit;
-    font-size:14px;
-    padding:9px 10px;
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    background:var(--white);
-    color:var(--ink);
-  }
-  .photo-box{
-    width:100px;height:120px;
-    border:1.5px dashed var(--gold);
-    border-radius:4px;
-    display:flex;align-items:center;justify-content:center;
-    background:var(--white);
-    overflow:hidden;
-    cursor:pointer;
-    font-size:11px;
-    color:var(--gold);
-    text-align:center;
-    margin-bottom:8px;
-  }
+  label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  input, select{width:100%; font-family:inherit; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
+  .photo-box{width:100px;height:120px; border:1.5px dashed var(--gold); border-radius:4px; display:flex;align-items:center;justify-content:center; background:var(--white); overflow:hidden; cursor:pointer; font-size:11px; color:var(--gold); text-align:center; margin-bottom:8px;}
   .photo-box img{width:100%;height:100%;object-fit:cover;}
-  .modal-foot{
-    padding:16px 22px;
-    display:flex; justify-content:flex-end; gap:10px;
-    border-top:1px solid var(--line);
-  }
-  .empty{
-    text-align:center;
-    padding:40px 20px;
-    color:var(--ink-soft);
-    font-size:14px;
-  }
-  .steps{
-    display:flex; gap:10px; margin-bottom:20px;
-  }
-  .steps div{
-    flex:1;
-    background:var(--white);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:12px 14px;
-  }
+  .code-gen-row{display:flex; gap:8px; align-items:flex-end; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:10px; margin-bottom:12px;}
+  .code-gen-row > div{flex:1;}
+  .code-gen-row .btn{white-space:nowrap;}
+  .modal-foot{padding:16px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--line);}
+  .empty{text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:14px;}
+  .steps{display:flex; gap:10px; margin-bottom:20px;}
+  .steps div{flex:1; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px;}
   .steps label{margin-bottom:6px;}
-  .pick-list{
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    background:var(--white);
-    max-height:280px;
-    overflow-y:auto;
-  }
-  .pick-row{
-    display:flex; align-items:center; gap:10px;
-    padding:9px 12px;
-    border-bottom:1px solid var(--line);
-    font-size:14px;
-  }
+  .pick-list{border:1px solid var(--line); border-radius:var(--radius); background:var(--white); max-height:280px; overflow-y:auto;}
+  .pick-row{display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:14px;}
   .pick-row:last-child{border-bottom:none;}
-  .toast{
-    position:fixed; bottom:24px; right:24px;
-    background:var(--ink); color:var(--paper);
-    padding:12px 18px; border-radius:var(--radius);
-    font-size:14px; box-shadow:0 8px 20px rgba(0,0,0,.25);
-    z-index:99; display:none;
-  }
+  .toast{position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--paper); padding:12px 18px; border-radius:var(--radius); font-size:14px; box-shadow:0 8px 20px rgba(0,0,0,.25); z-index:99; display:none;}
   .toast.show{display:block;}
   .enrolled-title{font-family:'Noto Serif Lao',serif; margin-top:32px;}
+  .profile-head{display:flex; gap:16px; align-items:center; margin-bottom:18px;}
+  .profile-head img, .profile-head .avatar-lg{width:72px;height:88px; border-radius:6px; object-fit:cover; border:1px solid var(--line); background:var(--paper-2);}
+  .profile-head h3{font-family:'Noto Serif Lao',serif; margin:0 0 2px; font-size:19px;}
+  .profile-head .sub{font-size:13px; color:var(--ink-soft);}
+  .section-title{font-family:'Noto Serif Lao',serif; font-size:15px; margin:22px 0 10px; border-bottom:1px solid var(--line); padding-bottom:6px;}
+  .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; font-size:14px;}
+  .info-grid .k{color:var(--ink-soft); font-size:12px;}
   @media(max-width:640px){
     .form-grid{grid-template-columns:1fr;}
+    .info-grid{grid-template-columns:1fr;}
+    .code-gen-row{flex-direction:column; align-items:stretch;}
     header.book-header{padding:22px 18px 60px;}
     main{padding:20px 16px 60px;}
     .lang-switch{right:18px; top:18px;}
@@ -331,7 +123,7 @@
   <!-- ===== STUDENTS PANEL ===== -->
   <section id="panel-students" class="panel active">
     <div class="toolbar">
-      <input type="text" id="searchInput" data-i18n-ph="searchPh" placeholder="ຄົ້ນຫາຊື່ ຫຼື ລະຫັດນັກຮຽນ...">
+      <input type="text" id="searchInput" data-i18n-ph="searchPh" placeholder="ຄົ້ນຫາຊື່ (ລາວ/ອັງກິດ) ຫຼື ລະຫັດນັກຮຽນ...">
       <select id="filterGrade"><option value="" data-i18n="allGrades">ທຸກຊັ້ນ</option></select>
       <select id="filterStatus">
         <option value="" data-i18n="allStatus">ທຸກສະຖານະ</option>
@@ -351,6 +143,7 @@
           <th data-i18n="colDob">ວັນເກີດ</th>
           <th data-i18n="colGrade">ຊັ້ນປັດຈຸບັນ</th>
           <th data-i18n="colStatus">ສະຖານະ</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="studentsBody"></tbody>
@@ -361,20 +154,10 @@
   <!-- ===== ENROLL PANEL ===== -->
   <section id="panel-enroll" class="panel">
     <div class="steps">
-      <div>
-        <label data-i18n="academicYear">ປີການສຶກສາ</label>
-        <select id="enrollYear"></select>
-      </div>
-      <div>
-        <label data-i18n="grade">ຊັ້ນຮຽນ</label>
-        <select id="enrollGrade"></select>
-      </div>
-      <div>
-        <label data-i18n="classroom">ຫ້ອງຮຽນ</label>
-        <select id="enrollClassroom"></select>
-      </div>
+      <div><label data-i18n="academicYear">ປີການສຶກສາ</label><select id="enrollYear"></select></div>
+      <div><label data-i18n="grade">ຊັ້ນຮຽນ</label><select id="enrollGrade"></select></div>
+      <div><label data-i18n="classroom">ຫ້ອງຮຽນ</label><select id="enrollClassroom"></select></div>
     </div>
-
     <div class="toolbar">
       <input type="text" id="enrollSearch" data-i18n-ph="enrollSearchPh" placeholder="ຄົ້ນຫານັກຮຽນທີ່ຈະລົງທະບຽນ...">
       <button class="btn stamp" id="btnEnrollSelected" data-i18n="enrollSelected" disabled>ລົງທະບຽນນັກຮຽນທີ່ເລືອກ</button>
@@ -382,7 +165,6 @@
     <div class="pick-list" id="enrollList">
       <div class="empty" data-i18n="chooseFirst">ກະລຸນາເລືອກ ປີ → ຊັ້ນ → ຫ້ອງ ກ່ອນ</div>
     </div>
-
     <h3 class="enrolled-title" data-i18n="alreadyEnrolled">ນັກຮຽນທີ່ລົງທະບຽນແລ້ວໃນຫ້ອງນີ້</h3>
     <table>
       <thead><tr>
@@ -397,7 +179,7 @@
 
 </main>
 
-<!-- ===== STUDENT MODAL ===== -->
+<!-- ===== STUDENT ADD/EDIT MODAL ===== -->
 <div class="overlay" id="studentOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -407,10 +189,33 @@
     <div class="modal-body">
       <div class="photo-box" id="photoBox" onclick="document.getElementById('photoInput').click()" data-i18n="photoLabel">ຮູບ 3×4</div>
       <input type="file" id="photoInput" accept="image/*" style="display:none;">
+
+      <div class="code-gen-row" id="codeGenRow">
+        <div><label data-i18n="entryYear">ປີເຂົ້າຮຽນ</label><select id="code_year"></select></div>
+        <div><label data-i18n="entryGrade">ຊັ້ນເຂົ້າຮຽນ</label><select id="code_grade"></select></div>
+        <button class="btn small secondary" id="btnGenCode" data-i18n="genCode" type="button">ສ້າງລະຫັດ</button>
+      </div>
+
       <div class="form-grid">
-        <div>
+        <div class="full">
           <label data-i18n="labelCode">ລະຫັດນັກຮຽນ *</label>
           <input type="text" id="f_code">
+        </div>
+        <div>
+          <label data-i18n="labelFirst">ຊື່ (ລາວ) *</label>
+          <input type="text" id="f_first">
+        </div>
+        <div>
+          <label data-i18n="labelLast">ນາມສະກຸນ (ລາວ) *</label>
+          <input type="text" id="f_last">
+        </div>
+        <div>
+          <label data-i18n="labelFirstEn">ຊື່ (ອັງກິດ)</label>
+          <input type="text" id="f_first_en">
+        </div>
+        <div>
+          <label data-i18n="labelLastEn">ນາມສະກຸນ (ອັງກິດ)</label>
+          <input type="text" id="f_last_en">
         </div>
         <div>
           <label data-i18n="labelGender">ເພດ</label>
@@ -421,32 +226,28 @@
           </select>
         </div>
         <div>
-          <label data-i18n="labelFirst">ຊື່ *</label>
-          <input type="text" id="f_first">
-        </div>
-        <div>
-          <label data-i18n="labelLast">ນາມສະກຸນ *</label>
-          <input type="text" id="f_last">
-        </div>
-        <div>
           <label data-i18n="labelDob">ວັນເດືອນປີເກີດ</label>
           <input type="date" id="f_dob">
         </div>
         <div>
           <label data-i18n="labelNat">ສັນຊາດ</label>
-          <input type="text" id="f_nat" value="ລາວ">
+          <input type="text" id="f_nat" value="ລາວ" list="dl_nat">
+          <datalist id="dl_nat"></datalist>
         </div>
         <div>
           <label data-i18n="labelVillage">ບ້ານ</label>
-          <input type="text" id="f_village">
+          <input type="text" id="f_village" list="dl_village">
+          <datalist id="dl_village"></datalist>
         </div>
         <div>
           <label data-i18n="labelDistrict">ເມືອງ</label>
-          <input type="text" id="f_district">
+          <input type="text" id="f_district" list="dl_district">
+          <datalist id="dl_district"></datalist>
         </div>
         <div>
           <label data-i18n="labelProvince">ແຂວງ</label>
-          <input type="text" id="f_province">
+          <input type="text" id="f_province" list="dl_province">
+          <datalist id="dl_province"></datalist>
         </div>
         <div>
           <label data-i18n="colStatus">ສະຖານະ</label>
@@ -460,27 +261,32 @@
         <div class="full" style="border-top:1px solid var(--line); margin-top:6px; padding-top:14px;">
           <label style="font-size:13px;" data-i18n="guardianInfo">ຂໍ້ມູນຜູ້ປົກຄອງ</label>
         </div>
-        <div>
-          <label data-i18n="labelGuardianName">ຊື່ຜູ້ປົກຄອງ</label>
-          <input type="text" id="g_name">
-        </div>
-        <div>
-          <label data-i18n="labelRelation">ຄວາມກ່ຽວຂ້ອງ</label>
-          <input type="text" id="g_rel" data-i18n-ph="relationPh" placeholder="ພໍ່ / ແມ່ / ອື່ນໆ">
-        </div>
-        <div>
-          <label data-i18n="labelPhone">ເບີໂທ</label>
-          <input type="text" id="g_phone">
-        </div>
-        <div>
-          <label data-i18n="labelJob">ອາຊີບ</label>
-          <input type="text" id="g_job">
-        </div>
+        <div><label data-i18n="labelGuardianName">ຊື່ຜູ້ປົກຄອງ</label><input type="text" id="g_name" list="dl_gname"><datalist id="dl_gname"></datalist></div>
+        <div><label data-i18n="labelRelation">ຄວາມກ່ຽວຂ້ອງ</label><input type="text" id="g_rel" data-i18n-ph="relationPh" placeholder="ພໍ່ / ແມ່ / ອື່ນໆ" list="dl_rel"><datalist id="dl_rel"></datalist></div>
+        <div><label data-i18n="labelPhone">ເບີໂທ</label><input type="text" id="g_phone"></div>
+        <div><label data-i18n="labelJob">ອາຊີບ</label><input type="text" id="g_job" list="dl_job"><datalist id="dl_job"></datalist></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn secondary" id="cancelModal" data-i18n="cancel">ຍົກເລີກ</button>
       <button class="btn stamp" id="saveStudent" data-i18n="save">ບັນທຶກ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STUDENT PROFILE / HISTORY MODAL ===== -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2 data-i18n="profileTitle">ປະຫວັດນັກຮຽນ</h2>
+      <button id="closeProfile">&times;</button>
+    </div>
+    <div class="modal-body" id="profileBody">
+      <!-- filled by JS -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="closeProfile2" data-i18n="close">ປິດ</button>
+      <button class="btn stamp" id="editFromProfile" data-i18n="edit">ແກ້ໄຂຂໍ້ມູນ</button>
     </div>
   </div>
 </div>
@@ -492,6 +298,7 @@ const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PHOTO_BUCKET = "student-photos";
+const SCHOOL_CODE = "DPY";
 
 // ---------- I18N ----------
 const I18N = {
@@ -501,7 +308,7 @@ const I18N = {
     subtitle: "ຂໍ້ມູນນັກຮຽນ ແລະ ການລົງທະບຽນເຂົ້າຫ້ອງຮຽນ",
     tabStudents: "ລາຍຊື່ນັກຮຽນ",
     tabEnroll: "ລົງທະບຽນເຂົ້າຫ້ອງ",
-    searchPh: "ຄົ້ນຫາຊື່ ຫຼື ລະຫັດນັກຮຽນ...",
+    searchPh: "ຄົ້ນຫາຊື່ (ລາວ/ອັງກິດ) ຫຼື ລະຫັດນັກຮຽນ...",
     allGrades: "ທຸກຊັ້ນ",
     allStatus: "ທຸກສະຖານະ",
     statusActive: "ກຳລັງຮຽນ",
@@ -529,13 +336,18 @@ const I18N = {
     addStudentTitle: "ເພີ່ມນັກຮຽນ",
     editStudentTitle: "ແກ້ໄຂຂໍ້ມູນນັກຮຽນ",
     photoLabel: "ຮູບ 3×4",
+    entryYear: "ປີເຂົ້າຮຽນ",
+    entryGrade: "ຊັ້ນເຂົ້າຮຽນ",
+    genCode: "ສ້າງລະຫັດ",
     labelCode: "ລະຫັດນັກຮຽນ *",
     labelGender: "ເພດ",
     dash: "-",
     male: "ຊາຍ",
     female: "ຍິງ",
-    labelFirst: "ຊື່ *",
-    labelLast: "ນາມສະກຸນ *",
+    labelFirst: "ຊື່ (ລາວ) *",
+    labelLast: "ນາມສະກຸນ (ລາວ) *",
+    labelFirstEn: "ຊື່ (ອັງກິດ)",
+    labelLastEn: "ນາມສະກຸນ (ອັງກິດ)",
     labelDob: "ວັນເດືອນປີເກີດ",
     labelNat: "ສັນຊາດ",
     labelVillage: "ບ້ານ",
@@ -549,13 +361,30 @@ const I18N = {
     labelJob: "ອາຊີບ",
     cancel: "ຍົກເລີກ",
     save: "ບັນທຶກ",
+    close: "ປິດ",
+    edit: "ແກ້ໄຂຂໍ້ມູນ",
+    profileTitle: "ປະຫວັດນັກຮຽນ",
+    sectionBasic: "ຂໍ້ມູນທົ່ວໄປ",
+    sectionEnrollHistory: "ປະຫວັດການຮຽນ",
+    sectionAcademic: "ຜົນການຮຽນ",
+    thYear: "ປີການສຶກສາ",
+    thGrade: "ຊັ້ນ",
+    thRoom: "ຫ້ອງ",
+    thTeacher: "ອາຈານປະຈຳຫ້ອງ",
+    thSubject: "ວິຊາ",
+    thScore: "ຄະແນນສະເລ່ຍ",
+    thGradeLetter: "ເກຣດ",
+    noHistory: "ຍັງບໍ່ມີປະຫວັດການລົງທະບຽນ",
+    noAcademic: "ຍັງບໍ່ມີຂໍ້ມູນຜົນການຮຽນ",
+    unknownTeacher: "ຍັງບໍ່ກຳນົດ",
     requireFields: "ກະລຸນາປ້ອນ ລະຫັດ, ຊື່, ນາມສະກຸນ",
     loadError: "ໂຫຼດຂໍ້ມູນຜິດພາດ: ",
     saveError: "ບັນທຶກຜິດພາດ: ",
     uploadError: "ອັບໂຫລດຮູບຜິດພາດ: ",
     saveSuccess: "ບັນທຶກສຳເລັດ",
     enrollError: "ລົງທະບຽນຜິດພາດ: ",
-    enrollSuccess: (n)=>`ລົງທະບຽນສຳເລັດ ${n} ຄົນ`
+    enrollSuccess: (n)=>`ລົງທະບຽນສຳເລັດ ${n} ຄົນ`,
+    codeGenError: "ກະລຸນາເລືອກປີ ແລະ ຊັ້ນເຂົ້າຮຽນກ່ອນ"
   },
   en: {
     pageTitle: "Student Registry | School Management System",
@@ -563,7 +392,7 @@ const I18N = {
     subtitle: "Student records and classroom enrollment",
     tabStudents: "Student List",
     tabEnroll: "Classroom Enrollment",
-    searchPh: "Search by name or student code...",
+    searchPh: "Search by name (Lao/English) or student code...",
     allGrades: "All grades",
     allStatus: "All statuses",
     statusActive: "Active",
@@ -591,13 +420,18 @@ const I18N = {
     addStudentTitle: "Add Student",
     editStudentTitle: "Edit Student",
     photoLabel: "3×4 Photo",
+    entryYear: "Entry Year",
+    entryGrade: "Entry Grade",
+    genCode: "Generate Code",
     labelCode: "Student Code *",
     labelGender: "Gender",
     dash: "-",
     male: "Male",
     female: "Female",
-    labelFirst: "First Name *",
-    labelLast: "Last Name *",
+    labelFirst: "First Name (Lao) *",
+    labelLast: "Last Name (Lao) *",
+    labelFirstEn: "First Name (English)",
+    labelLastEn: "Last Name (English)",
     labelDob: "Date of Birth",
     labelNat: "Nationality",
     labelVillage: "Village",
@@ -611,20 +445,34 @@ const I18N = {
     labelJob: "Occupation",
     cancel: "Cancel",
     save: "Save",
+    close: "Close",
+    edit: "Edit Info",
+    profileTitle: "Student Profile",
+    sectionBasic: "General Information",
+    sectionEnrollHistory: "Enrollment History",
+    sectionAcademic: "Academic Results",
+    thYear: "Academic Year",
+    thGrade: "Grade",
+    thRoom: "Classroom",
+    thTeacher: "Homeroom Teacher",
+    thSubject: "Subject",
+    thScore: "Average Score",
+    thGradeLetter: "Grade",
+    noHistory: "No enrollment history yet",
+    noAcademic: "No academic results yet",
+    unknownTeacher: "Not assigned",
     requireFields: "Please enter code, first name, and last name",
     loadError: "Error loading data: ",
     saveError: "Error saving: ",
     uploadError: "Error uploading photo: ",
     saveSuccess: "Saved successfully",
     enrollError: "Error enrolling: ",
-    enrollSuccess: (n)=>`Successfully enrolled ${n} student(s)`
+    enrollSuccess: (n)=>`Successfully enrolled ${n} student(s)`,
+    codeGenError: "Please select entry year and entry grade first"
   }
 };
 let currentLang = 'lo';
-function t(key){
-  const v = I18N[currentLang][key];
-  return typeof v === 'function' ? v : v;
-}
+function t(key){ return I18N[currentLang][key]; }
 
 function applyStaticI18n(){
   document.documentElement.lang = currentLang === 'lo' ? 'lo' : 'en';
@@ -639,7 +487,6 @@ function applyStaticI18n(){
   });
   document.getElementById('langLo').classList.toggle('active', currentLang==='lo');
   document.getElementById('langEn').classList.toggle('active', currentLang==='en');
-  // photo box: keep image if present, otherwise show label
   const pb = document.getElementById('photoBox');
   if(!pb.querySelector('img')) pb.textContent = I18N[currentLang].photoLabel;
 }
@@ -664,6 +511,35 @@ function toast(msg){
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'), 2600);
+}
+function esc(s){
+  return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function titlePrefix(gender){
+  if(gender==='ຊາຍ') return 'ທ້າວ ';
+  if(gender==='ຍິງ') return 'ນາງ ';
+  return '';
+}
+
+// ---------- AUTOCOMPLETE (datalist) ----------
+function fillDatalist(id, values){
+  const uniq = [...new Set((values||[]).filter(Boolean))];
+  const dl = document.getElementById(id);
+  if(!dl) return;
+  dl.innerHTML = uniq.map(v=>`<option value="${esc(v)}"></option>`).join('');
+}
+async function loadAutocompleteData(){
+  const [{data:sD}, {data:gD}] = await Promise.all([
+    sb.from('students').select('village,district,province,nationality'),
+    sb.from('guardians').select('relationship,occupation,full_name')
+  ]);
+  fillDatalist('dl_village', (sD||[]).map(r=>r.village));
+  fillDatalist('dl_district', (sD||[]).map(r=>r.district));
+  fillDatalist('dl_province', (sD||[]).map(r=>r.province));
+  fillDatalist('dl_nat', (sD||[]).map(r=>r.nationality));
+  fillDatalist('dl_rel', (gD||[]).map(r=>r.relationship));
+  fillDatalist('dl_job', (gD||[]).map(r=>r.occupation));
+  fillDatalist('dl_gname', (gD||[]).map(r=>r.full_name));
 }
 
 // ---------- TABS ----------
@@ -691,36 +567,82 @@ function rebuildReferenceSelects(){
   const filterGrade = document.getElementById('filterGrade');
   const prevFilterGrade = filterGrade.value;
   filterGrade.innerHTML = `<option value="">${t('allGrades')}</option>`;
-  grades.forEach(gr=>{
-    filterGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`;
-  });
+  grades.forEach(gr=>{ filterGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`; });
   filterGrade.value = prevFilterGrade;
 
   const enrollYear = document.getElementById('enrollYear');
   const prevYear = enrollYear.value;
   enrollYear.innerHTML = '';
-  years.forEach(yr=>{
-    enrollYear.innerHTML += `<option value="${yr.academic_year_id}" ${yr.is_current?'selected':''}>${yr.year_name}</option>`;
-  });
+  years.forEach(yr=>{ enrollYear.innerHTML += `<option value="${yr.academic_year_id}" ${yr.is_current?'selected':''}>${yr.year_name}</option>`; });
   if(prevYear) enrollYear.value = prevYear;
 
   const enrollGrade = document.getElementById('enrollGrade');
   const prevGrade = enrollGrade.value;
   enrollGrade.innerHTML = '';
-  grades.forEach(gr=>{
-    enrollGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`;
-  });
+  grades.forEach(gr=>{ enrollGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`; });
   if(prevGrade) enrollGrade.value = prevGrade;
+
+  const codeYear = document.getElementById('code_year');
+  codeYear.innerHTML = '';
+  years.forEach(yr=>{ codeYear.innerHTML += `<option value="${yr.academic_year_id}" ${yr.is_current?'selected':''}>${yr.year_name}</option>`; });
+
+  const codeGrade = document.getElementById('code_grade');
+  codeGrade.innerHTML = '';
+  grades.forEach(gr=>{ codeGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`; });
 }
+
+// ---------- STUDENT CODE GENERATION ----------
+function gradeToCode(gradeName){
+  const numMatch = gradeName.match(/(\d+)/);
+  const num = numMatch ? numMatch[1] : '';
+  if(gradeName.includes('ອະນຸບານ')) return 'K'+num;
+  if(gradeName.startsWith('ປໍ')) return 'P'+num;
+  if(gradeName.startsWith('ມໍ')) return 'M'+num;
+  return 'X'+num;
+}
+
+async function generateStudentCode(){
+  const yearId = document.getElementById('code_year').value;
+  const gradeId = document.getElementById('code_grade').value;
+  if(!yearId || !gradeId){ toast(t('codeGenError')); return; }
+
+  const yearObj = years.find(y=>String(y.academic_year_id)===String(yearId));
+  const gradeObj = grades.find(g=>String(g.grade_id)===String(gradeId));
+  if(!yearObj || !gradeObj) return;
+
+  const yy = (yearObj.year_name.match(/\d{4}/)?.[0] || '').slice(-2);
+  const gCode = gradeToCode(gradeObj.grade_name);
+  const prefix = `${yy}-${SCHOOL_CODE}-${gCode}-`;
+
+  const {data, error} = await sb.from('students').select('student_code').ilike('student_code', prefix+'%');
+  if(error){ toast(t('loadError')+error.message); return; }
+
+  let maxSeq = 0;
+  (data||[]).forEach(r=>{
+    const parts = r.student_code.split('-');
+    const seq = parseInt(parts[parts.length-1], 10);
+    if(!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+  });
+  const next = String(maxSeq+1).padStart(3,'0');
+  document.getElementById('f_code').value = prefix+next;
+}
+document.getElementById('btnGenCode').addEventListener('click', generateStudentCode);
+
+// Auto-generate the code by default when adding a new student (not when editing).
+function autoGenerateCodeIfAdding(){
+  if(editingStudentId) return;
+  generateStudentCode();
+}
+document.getElementById('code_year').addEventListener('change', autoGenerateCodeIfAdding);
+document.getElementById('code_grade').addEventListener('change', autoGenerateCodeIfAdding);
 
 // ---------- STUDENTS TABLE ----------
 const statusKeyMap = {active:'statusActive', transferred:'statusTransferred', graduated:'statusGraduated', dropped:'statusDropped'};
 
 async function loadStudents(){
   let query = sb.from('students').select(`
-    student_id, student_code, first_name, last_name, date_of_birth, status, photo_url,
-    student_enrollments ( classroom_id, academic_year_id,
-      classrooms ( room_name, grade_id ) )
+    student_id, student_code, first_name, last_name, first_name_en, last_name_en, gender, date_of_birth, status, photo_url,
+    student_enrollments ( classroom_id, academic_year_id, classrooms ( room_name, grade_id ) )
   `).order('student_code');
 
   const status = document.getElementById('filterStatus').value;
@@ -736,7 +658,8 @@ async function loadStudents(){
   if(search){
     rows = rows.filter(s =>
       (s.student_code||'').toLowerCase().includes(search) ||
-      (s.first_name+' '+s.last_name).toLowerCase().includes(search)
+      (s.first_name+' '+s.last_name).toLowerCase().includes(search) ||
+      ((s.first_name_en||'')+' '+(s.last_name_en||'')).toLowerCase().includes(search)
     );
   }
 
@@ -754,15 +677,20 @@ async function loadStudents(){
     const roomName = enr?.classrooms?.room_name || '-';
     const badgeClass = s.status || 'active';
     const badgeLabel = I18N[currentLang][statusKeyMap[s.status]] || s.status;
+    const nameEn = (s.first_name_en || s.last_name_en) ? `${s.first_name_en||''} ${s.last_name_en||''}`.trim() : '';
 
     body.innerHTML += `
-      <tr class="row-link" onclick="openEditStudent(${s.student_id})">
+      <tr>
         <td>${s.photo_url ? `<img class="avatar" src="${s.photo_url}">` : `<div class="avatar"></div>`}</td>
-        <td>${s.student_code}</td>
-        <td>${s.first_name} ${s.last_name}</td>
+        <td>${esc(s.student_code)}</td>
+        <td>
+          <a class="name-link" onclick="openStudentProfile(${s.student_id})">${titlePrefix(s.gender)}${esc(s.first_name)} ${esc(s.last_name)}</a>
+          ${nameEn ? `<span class="name-en">${esc(nameEn)}</span>` : ''}
+        </td>
         <td>${s.date_of_birth || '-'}</td>
         <td>${gradeName} ${roomName!=='-' ? '('+roomName+')' : ''}</td>
         <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+        <td class="row-actions"><button class="btn small secondary" onclick="openEditStudent(${s.student_id})">✎</button></td>
       </tr>`;
   });
 
@@ -773,14 +701,14 @@ document.getElementById('searchInput').addEventListener('input', loadStudents);
 document.getElementById('filterGrade').addEventListener('change', loadStudents);
 document.getElementById('filterStatus').addEventListener('change', loadStudents);
 
-// ---------- STUDENT MODAL ----------
+// ---------- STUDENT ADD/EDIT MODAL ----------
 const overlay = document.getElementById('studentOverlay');
 function resetForm(){
   editingStudentId = null;
   selectedPhotoFile = null;
   document.getElementById('modalTitle').textContent = t('addStudentTitle');
   document.getElementById('photoBox').textContent = t('photoLabel');
-  ['f_code','f_first','f_last','f_dob','f_village','f_district','f_province','g_name','g_rel','g_phone','g_job']
+  ['f_code','f_first','f_last','f_first_en','f_last_en','f_dob','f_village','f_district','f_province','g_name','g_rel','g_phone','g_job']
     .forEach(id=>document.getElementById(id).value='');
   document.getElementById('f_gender').value='';
   document.getElementById('f_nat').value='ລາວ';
@@ -790,6 +718,7 @@ function resetForm(){
 document.getElementById('btnAddStudent').addEventListener('click', ()=>{
   resetForm();
   overlay.classList.add('open');
+  autoGenerateCodeIfAdding();
 });
 document.getElementById('closeModal').addEventListener('click', ()=>overlay.classList.remove('open'));
 document.getElementById('cancelModal').addEventListener('click', ()=>overlay.classList.remove('open'));
@@ -799,9 +728,7 @@ document.getElementById('photoInput').addEventListener('change', (e)=>{
   if(!file) return;
   selectedPhotoFile = file;
   const reader = new FileReader();
-  reader.onload = ()=> {
-    document.getElementById('photoBox').innerHTML = `<img src="${reader.result}">`;
-  };
+  reader.onload = ()=> { document.getElementById('photoBox').innerHTML = `<img src="${reader.result}">`; };
   reader.readAsDataURL(file);
 });
 
@@ -817,6 +744,8 @@ async function openEditStudent(id){
   document.getElementById('f_code').value = s.student_code || '';
   document.getElementById('f_first').value = s.first_name || '';
   document.getElementById('f_last').value = s.last_name || '';
+  document.getElementById('f_first_en').value = s.first_name_en || '';
+  document.getElementById('f_last_en').value = s.last_name_en || '';
   document.getElementById('f_gender').value = s.gender || '';
   document.getElementById('f_dob').value = s.date_of_birth || '';
   document.getElementById('f_nat').value = s.nationality || '';
@@ -824,9 +753,7 @@ async function openEditStudent(id){
   document.getElementById('f_district').value = s.district || '';
   document.getElementById('f_province').value = s.province || '';
   document.getElementById('f_status').value = s.status || 'active';
-  if(s.photo_url){
-    document.getElementById('photoBox').innerHTML = `<img src="${s.photo_url}">`;
-  }
+  if(s.photo_url){ document.getElementById('photoBox').innerHTML = `<img src="${s.photo_url}">`; }
   const primaryGuardian = (s.student_guardians||[]).find(g=>g.is_primary_contact) || (s.student_guardians||[])[0];
   if(primaryGuardian && primaryGuardian.guardians){
     document.getElementById('g_name').value = primaryGuardian.guardians.full_name || '';
@@ -834,6 +761,7 @@ async function openEditStudent(id){
     document.getElementById('g_phone').value = primaryGuardian.guardians.phone || '';
     document.getElementById('g_job').value = primaryGuardian.guardians.occupation || '';
   }
+  document.getElementById('profileOverlay').classList.remove('open');
   overlay.classList.add('open');
 }
 window.openEditStudent = openEditStudent;
@@ -842,19 +770,15 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
   const code = document.getElementById('f_code').value.trim();
   const first = document.getElementById('f_first').value.trim();
   const last = document.getElementById('f_last').value.trim();
-  if(!code || !first || !last){
-    toast(t('requireFields'));
-    return;
-  }
+  if(!code || !first || !last){ toast(t('requireFields')); return; }
 
   let photo_url = undefined;
   if(selectedPhotoFile){
     const ext = selectedPhotoFile.name.split('.').pop();
     const path = `${code}-${Date.now()}.${ext}`;
     const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, selectedPhotoFile, {upsert:true});
-    if(upErr){
-      toast(t('uploadError')+upErr.message);
-    } else {
+    if(upErr){ toast(t('uploadError')+upErr.message); }
+    else {
       const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
       photo_url = pub.publicUrl;
     }
@@ -864,6 +788,8 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
     student_code: code,
     first_name: first,
     last_name: last,
+    first_name_en: document.getElementById('f_first_en').value.trim() || null,
+    last_name_en: document.getElementById('f_last_en').value.trim() || null,
     gender: document.getElementById('f_gender').value || null,
     date_of_birth: document.getElementById('f_dob').value || null,
     nationality: document.getElementById('f_nat').value || null,
@@ -894,15 +820,12 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
     };
     const {data:existingLink} = await sb.from('student_guardians')
       .select('guardian_id').eq('student_id', studentId).eq('is_primary_contact', true).maybeSingle();
-
     if(existingLink){
       await sb.from('guardians').update(gPayload).eq('guardian_id', existingLink.guardian_id);
     } else {
       const {data:newGuardian, error:gErr} = await sb.from('guardians').insert(gPayload).select().single();
       if(!gErr){
-        await sb.from('student_guardians').insert({
-          student_id: studentId, guardian_id: newGuardian.guardian_id, is_primary_contact: true
-        });
+        await sb.from('student_guardians').insert({ student_id: studentId, guardian_id: newGuardian.guardian_id, is_primary_contact: true });
       }
     }
   }
@@ -910,7 +833,101 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
   toast(t('saveSuccess'));
   overlay.classList.remove('open');
   loadStudents();
+  loadAutocompleteData();
 });
+
+// ---------- STUDENT PROFILE / HISTORY ----------
+const profileOverlay = document.getElementById('profileOverlay');
+document.getElementById('closeProfile').addEventListener('click', ()=>profileOverlay.classList.remove('open'));
+document.getElementById('closeProfile2').addEventListener('click', ()=>profileOverlay.classList.remove('open'));
+document.getElementById('editFromProfile').addEventListener('click', ()=>{
+  if(currentProfileStudentId) openEditStudent(currentProfileStudentId);
+});
+
+let currentProfileStudentId = null;
+
+async function openStudentProfile(id){
+  currentProfileStudentId = id;
+  const body = document.getElementById('profileBody');
+  body.innerHTML = `<div class="empty">...</div>`;
+  profileOverlay.classList.add('open');
+
+  const {data:s, error} = await sb.from('students').select(`
+    *, student_guardians ( is_primary_contact, guardians ( * ) )
+  `).eq('student_id', id).single();
+  if(error){ toast(t('loadError')+error.message); return; }
+
+  const {data:enrollments} = await sb.from('student_enrollments')
+    .select(`enrollment_date, enrollment_status, academic_years ( year_name, academic_year_id ),
+      classrooms ( room_name, grade_id, homeroom_teacher_id, staff ( first_name, last_name ) )`)
+    .eq('student_id', id)
+    .order('academic_year_id', { foreignTable: 'academic_years', ascending: false });
+
+  const {data:results} = await sb.from('term_results')
+    .select(`average_score, grade_letter, subjects ( subject_name ),
+      terms ( term_name, academic_years ( year_name ) )`)
+    .eq('student_id', id);
+
+  const nameEn = (s.first_name_en || s.last_name_en) ? `${s.first_name_en||''} ${s.last_name_en||''}`.trim() : '';
+  const badgeLabel = I18N[currentLang][statusKeyMap[s.status]] || s.status;
+  const guardian = (s.student_guardians||[]).find(g=>g.is_primary_contact) || (s.student_guardians||[])[0];
+
+  let historyRows = '';
+  (enrollments||[]).forEach(e=>{
+    const gradeName = grades.find(g=>g.grade_id===e.classrooms?.grade_id)?.grade_name || '-';
+    const teacher = e.classrooms?.staff ? `${e.classrooms.staff.first_name} ${e.classrooms.staff.last_name}` : t('unknownTeacher');
+    historyRows += `<tr>
+      <td>${esc(e.academic_years?.year_name || '-')}</td>
+      <td>${esc(gradeName)}</td>
+      <td>${esc(e.classrooms?.room_name || '-')}</td>
+      <td>${esc(teacher)}</td>
+    </tr>`;
+  });
+
+  let academicRows = '';
+  (results||[]).forEach(r=>{
+    academicRows += `<tr>
+      <td>${esc(r.terms?.academic_years?.year_name || '-')} ${esc(r.terms?.term_name || '')}</td>
+      <td>${esc(r.subjects?.subject_name || '-')}</td>
+      <td>${r.average_score ?? '-'}</td>
+      <td>${esc(r.grade_letter || '-')}</td>
+    </tr>`;
+  });
+
+  body.innerHTML = `
+    <div class="profile-head">
+      ${s.photo_url ? `<img src="${s.photo_url}">` : `<div class="avatar-lg"></div>`}
+      <div>
+        <h3>${esc(s.first_name)} ${esc(s.last_name)}</h3>
+        ${nameEn ? `<div class="sub">${esc(nameEn)}</div>` : ''}
+        <div class="sub">${esc(s.student_code)} · <span class="badge ${s.status}">${badgeLabel}</span></div>
+      </div>
+    </div>
+
+    <div class="section-title">${t('sectionBasic')}</div>
+    <div class="info-grid">
+      <div><div class="k">${t('labelDob')}</div>${s.date_of_birth || '-'}</div>
+      <div><div class="k">${t('labelGender')}</div>${esc(s.gender || '-')}</div>
+      <div><div class="k">${t('labelNat')}</div>${esc(s.nationality || '-')}</div>
+      <div><div class="k">${t('labelVillage')} / ${t('labelDistrict')} / ${t('labelProvince')}</div>${esc([s.village,s.district,s.province].filter(Boolean).join(', ') || '-')}</div>
+      <div><div class="k">${t('labelGuardianName')}</div>${esc(guardian?.guardians?.full_name || '-')}</div>
+      <div><div class="k">${t('labelPhone')}</div>${esc(guardian?.guardians?.phone || '-')}</div>
+    </div>
+
+    <div class="section-title">${t('sectionEnrollHistory')}</div>
+    <table>
+      <thead><tr><th>${t('thYear')}</th><th>${t('thGrade')}</th><th>${t('thRoom')}</th><th>${t('thTeacher')}</th></tr></thead>
+      <tbody>${historyRows || `<tr><td colspan="4" class="empty">${t('noHistory')}</td></tr>`}</tbody>
+    </table>
+
+    <div class="section-title">${t('sectionAcademic')}</div>
+    <table>
+      <thead><tr><th>${t('thYear')}</th><th>${t('thSubject')}</th><th>${t('thScore')}</th><th>${t('thGradeLetter')}</th></tr></thead>
+      <tbody>${academicRows || `<tr><td colspan="4" class="empty">${t('noAcademic')}</td></tr>`}</tbody>
+    </table>
+  `;
+}
+window.openStudentProfile = openStudentProfile;
 
 // ---------- ENROLLMENT ----------
 function refreshEnrollClassroomOptions(){
@@ -919,11 +936,8 @@ function refreshEnrollClassroomOptions(){
   const sel = document.getElementById('enrollClassroom');
   sel.innerHTML = '';
   const opts = classrooms.filter(c => String(c.academic_year_id)===String(yearId) && String(c.grade_id)===String(gradeId));
-  if(opts.length===0){
-    sel.innerHTML = `<option value="">${t('noRoom')}</option>`;
-  } else {
-    opts.forEach(c=> sel.innerHTML += `<option value="${c.classroom_id}">${c.room_name}</option>`);
-  }
+  if(opts.length===0){ sel.innerHTML = `<option value="">${t('noRoom')}</option>`; }
+  else { opts.forEach(c=> sel.innerHTML += `<option value="${c.classroom_id}">${c.room_name}</option>`); }
   loadEnrollmentPanel();
 }
 document.getElementById('enrollYear').addEventListener('change', refreshEnrollClassroomOptions);
@@ -949,7 +963,6 @@ async function loadEnrollmentPanel(){
   const {data:enrolled, error} = await sb.from('student_enrollments')
     .select('enrollment_id, enrollment_date, enrollment_status, students(student_id, student_code, first_name, last_name)')
     .eq('classroom_id', classroomId).eq('academic_year_id', yearId);
-
   if(error){ toast(t('loadError')+error.message); return; }
 
   currentEnrollmentSet = new Set((enrolled||[]).map(e=>e.students.student_id));
@@ -975,14 +988,9 @@ function renderEnrollList(){
   const search = document.getElementById('enrollSearch').value.trim().toLowerCase();
   const list = document.getElementById('enrollList');
   const rows = enrollableStudents.filter(s =>
-    !search ||
-    s.student_code.toLowerCase().includes(search) ||
-    (s.first_name+' '+s.last_name).toLowerCase().includes(search)
+    !search || s.student_code.toLowerCase().includes(search) || (s.first_name+' '+s.last_name).toLowerCase().includes(search)
   );
-  if(rows.length===0){
-    list.innerHTML = `<div class="empty">${t('noEnrollable')}</div>`;
-    return;
-  }
+  if(rows.length===0){ list.innerHTML = `<div class="empty">${t('noEnrollable')}</div>`; return; }
   list.innerHTML = rows.map(s=>`
     <div class="pick-row">
       <input type="checkbox" data-sid="${s.student_id}" ${checkedForEnroll.has(s.student_id)?'checked':''} onchange="toggleCheck(${s.student_id}, this.checked)">
@@ -1012,6 +1020,7 @@ document.getElementById('btnEnrollSelected').addEventListener('click', async ()=
   applyStaticI18n();
   await loadReferenceData();
   await loadStudents();
+  loadAutocompleteData();
 })();
 </script>
 </body>
