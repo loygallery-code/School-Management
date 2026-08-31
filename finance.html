@@ -218,7 +218,7 @@ async function loadReferenceData(){
     sb.from('academic_years').select('*').order('start_date',{ascending:false}),
     sb.from('classrooms').select('*'),
     sb.from('fee_types').select('*').order('fee_name'),
-    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), grade_levels!fee_structure_grade_id_fkey(grade_name), grade_start:grade_levels!fee_structure_grade_start_id_fkey(grade_name, grade_order), grade_end:grade_levels!fee_structure_grade_end_id_fkey(grade_name, grade_order), academic_years(year_name)')
+    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), academic_years(year_name)')
   ]);
   if(fsErr) toast('ໂຫຼດການກຳນົດຄ່າທຳນຽມຜິດພາດ: '+fsErr.message);
   grades=g||[]; years=y||[]; classrooms=c||[]; feeTypes=ft||[]; feeStructures=fs||[];
@@ -243,21 +243,25 @@ function buildSelects(){
 }
 
 function gradeRangeLabel(f){
-  if(f.grade_start){
-    const endName = f.grade_end ? f.grade_end.grade_name : f.grade_start.grade_name;
-    return f.grade_start.grade_name === endName ? f.grade_start.grade_name : `${f.grade_start.grade_name} - ${endName}`;
+  const startG = grades.find(g=>g.grade_id===f.grade_start_id);
+  const endG = grades.find(g=>g.grade_id===f.grade_end_id);
+  if(startG){
+    return (!endG || startG.grade_id===endG.grade_id) ? startG.grade_name : `${startG.grade_name} - ${endG.grade_name}`;
   }
-  return f.grade_levels?.grade_name || '-';
+  const oldG = grades.find(g=>g.grade_id===f.grade_id);
+  return oldG?.grade_name || '-';
 }
 
 function feeStructureAppliesToGrade(f, gradeId){
   const grade = grades.find(g=>String(g.grade_id)===String(gradeId));
   if(!grade) return false;
-  if(f.grade_start && f.grade_end){
-    return grade.grade_order >= f.grade_start.grade_order && grade.grade_order <= f.grade_end.grade_order;
+  const startG = grades.find(g=>g.grade_id===f.grade_start_id);
+  const endG = grades.find(g=>g.grade_id===f.grade_end_id);
+  if(startG && endG){
+    return grade.grade_order >= startG.grade_order && grade.grade_order <= endG.grade_order;
   }
-  if(f.grade_start){
-    return grade.grade_order === f.grade_start.grade_order;
+  if(startG){
+    return grade.grade_order === startG.grade_order;
   }
   // fallback for old single-grade rows
   return String(f.grade_id) === String(gradeId);
