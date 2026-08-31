@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ຄູ-ພະນັກງານ | ລະບົບບໍລິຫານໂຮງຮຽນ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --paper:#F7F3EA; --paper-2:#EFE8D8; --ink:#1D2B4F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFDF8; --radius:6px; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans Lao','Noto Sans',sans-serif; min-height:100vh;}
+  header.book-header{background:var(--ink); color:var(--paper); padding:28px 32px 22px; position:relative; border-bottom:4px double var(--gold);}
+  header.book-header h1{font-family:'Noto Serif Lao',serif; font-weight:700; font-size:26px; margin:0 0 4px;}
+  header.book-header p{margin:0; font-size:14px; color:#C9CEDC;}
+  nav.tabs{display:flex; gap:2px; background:var(--paper-2); padding:0 32px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  nav.tabs button, nav.tabs a{font-family:'Noto Sans Lao',sans-serif; font-size:15px; font-weight:600; padding:14px 22px; background:transparent; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; position:relative; top:1px; text-decoration:none; display:inline-block;}
+  nav.tabs button.active, nav.tabs a.active{color:var(--ink); border-bottom:3px solid var(--stamp); background:var(--paper);}
+  main{padding:28px 32px 60px; max-width:1150px; margin:0 auto;}
+  .panel{display:none;} .panel.active{display:block;}
+  .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
+  .toolbar input, .toolbar select{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
+  .toolbar input[type=text]{flex:1; min-width:200px;}
+  .btn{font-family:'Noto Sans Lao',sans-serif; font-weight:600; font-size:14px; padding:10px 18px; border-radius:var(--radius); border:1px solid var(--ink); background:var(--ink); color:var(--paper); cursor:pointer;}
+  .btn.secondary{background:transparent; color:var(--ink);}
+  .btn.stamp{background:var(--stamp); border-color:var(--stamp); color:#fff;}
+  .btn.small{padding:6px 10px; font-size:12px;}
+  .btn:hover{opacity:.9;}
+  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
+  td{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;} tr:hover td{background:#FBF8F0;}
+  .avatar{width:34px;height:34px; border-radius:4px; object-fit:cover; background:var(--paper-2); border:1px solid var(--line);}
+  .badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid currentColor;}
+  .badge.active{color:var(--ok);} .badge.inactive{color:var(--stamp);}
+  .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:600px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
+  .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
+  .modal-head button{background:none;border:none;color:var(--paper); font-size:20px;cursor:pointer;}
+  .modal-body{padding:20px 22px;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;}
+  .form-grid .full{grid-column:1/-1;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  input, select{width:100%; font-family:inherit; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
+  .modal-foot{padding:16px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--line);}
+  .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
+  .steps{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .steps div{flex:1; min-width:160px; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px;}
+  .card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:20px;}
+  .section-title{font-family:'Noto Serif Lao',serif; font-size:16px; margin:0 0 12px;}
+  .toast{position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--paper); padding:12px 18px; border-radius:var(--radius); font-size:14px; box-shadow:0 8px 20px rgba(0,0,0,.25); z-index:99; display:none;}
+  .toast.show{display:block;}
+  @media(max-width:640px){ .form-grid{grid-template-columns:1fr;} main{padding:20px 16px 60px;} nav.tabs{padding:0 16px; overflow-x:auto;} }
+</style>
+</head>
+<body>
+
+<header class="book-header">
+  <h1>ຄູ-ພະນັກງານ</h1>
+  <p>ຂໍ້ມູນຄູ-ພະນັກງານ ແລະ ການມອບໝາຍວິຊາ/ຫ້ອງ</p>
+</header>
+
+<nav class="tabs">
+  <a href="index.html">ນັກຮຽນ</a>
+  <button class="tab-btn active" data-tab="staff">ຄູ-ພະນັກງານ</button>
+  <button class="tab-btn" data-tab="assign">ມອບໝາຍວິຊາ/ຫ້ອງ</button>
+  <a href="academic.html">ວິຊາການ</a>
+  <a href="finance.html">ການເງິນ</a>
+</nav>
+
+<main>
+  <!-- ===== STAFF LIST ===== -->
+  <section id="panel-staff" class="panel active">
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="ຄົ້ນຫາຊື່ ຫຼື ລະຫັດ...">
+      <select id="filterStatus">
+        <option value="">ທຸກສະຖານະ</option>
+        <option value="active">ປະຈຳການ</option>
+        <option value="inactive">ພົ້ນຕຳແໜ່ງ</option>
+      </select>
+      <button class="btn stamp" id="btnAddStaff">+ ເພີ່ມຄູ/ພະນັກງານ</button>
+    </div>
+    <table>
+      <thead><tr><th></th><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th>ພະແນກ</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th></th></tr></thead>
+      <tbody id="staffBody"></tbody>
+    </table>
+    <div id="staffEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີຂໍ້ມູນຄູ-ພະນັກງານ</div>
+  </section>
+
+  <!-- ===== ASSIGNMENT ===== -->
+  <section id="panel-assign" class="panel">
+    <div class="card">
+      <div class="section-title">ຄູປະຈຳຫ້ອງ</div>
+      <div class="steps">
+        <div><label>ປີການສຶກສາ</label><select id="hr_year"></select></div>
+        <div><label>ຊັ້ນຮຽນ</label><select id="hr_grade"></select></div>
+        <div><label>ຫ້ອງຮຽນ</label><select id="hr_classroom"></select></div>
+        <div><label>ຄູປະຈຳຫ້ອງ</label><select id="hr_teacher"></select></div>
+      </div>
+      <button class="btn stamp" id="btnSaveHomeroom">ບັນທຶກຄູປະຈຳຫ້ອງ</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">ມອບໝາຍວິຊາໃຫ້ຄູ</div>
+      <div class="steps">
+        <div><label>ປີການສຶກສາ</label><select id="as_year"></select></div>
+        <div><label>ຫ້ອງຮຽນ</label><select id="as_classroom"></select></div>
+        <div><label>ວິຊາ</label><select id="as_subject"></select></div>
+        <div><label>ຄູຜູ້ສອນ</label><select id="as_teacher"></select></div>
+      </div>
+      <button class="btn stamp" id="btnAddAssignment">+ ມອບໝາຍ</button>
+      <table style="margin-top:16px;">
+        <thead><tr><th>ຫ້ອງຮຽນ</th><th>ວິຊາ</th><th>ຄູຜູ້ສອນ</th><th></th></tr></thead>
+        <tbody id="assignmentBody"></tbody>
+      </table>
+      <div id="assignmentEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີການມອບໝາຍວິຊາ</div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== STAFF MODAL ===== -->
+<div class="overlay" id="staffOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="modalTitle">ເພີ່ມຄູ/ພະນັກງານ</h2><button id="closeModal">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div><label>ລະຫັດ *</label><input type="text" id="f_code"></div>
+        <div><label>ຕຳແໜ່ງ</label><input type="text" id="f_position" placeholder="ຄູສອນ / ຜູ້ອຳນວຍການ"></div>
+        <div><label>ຊື່ *</label><input type="text" id="f_first"></div>
+        <div><label>ນາມສະກຸນ *</label><input type="text" id="f_last"></div>
+        <div><label>ເພດ</label><select id="f_gender"><option value="">-</option><option value="ຊາຍ">ຊາຍ</option><option value="ຍິງ">ຍິງ</option></select></div>
+        <div><label>ວັນເດືອນປີເກີດ</label><input type="date" id="f_dob"></div>
+        <div><label>ເບີໂທ</label><input type="text" id="f_phone"></div>
+        <div><label>ພະແນກ</label><input type="text" id="f_department"></div>
+        <div><label>ວັນທີ່ເລີ່ມວຽກ</label><input type="date" id="f_hire"></div>
+        <div><label>ສະຖານະ</label><select id="f_status"><option value="active">ປະຈຳການ</option><option value="inactive">ພົ້ນຕຳແໜ່ງ</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn secondary" id="cancelModal">ຍົກເລີກ</button><button class="btn stamp" id="saveStaff">ບັນທຶກ</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
+function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+let grades=[], years=[], classrooms=[], subjects=[], staffList=[];
+let editingStaffId = null;
+
+async function loadReferenceData(){
+  const [{data:g},{data:y},{data:c},{data:sub},{data:st}] = await Promise.all([
+    sb.from('grade_levels').select('*').order('grade_order'),
+    sb.from('academic_years').select('*').order('start_date',{ascending:false}),
+    sb.from('classrooms').select('*'),
+    sb.from('subjects').select('*').order('subject_name'),
+    sb.from('staff').select('*').order('first_name')
+  ]);
+  grades=g||[]; years=y||[]; classrooms=c||[]; subjects=sub||[]; staffList=st||[];
+  buildSelects();
+}
+
+function buildSelects(){
+  const teacherOpts = staffList.map(s=>`<option value="${s.staff_id}">${esc(s.first_name)} ${esc(s.last_name)}</option>`).join('');
+  ['hr_teacher','as_teacher'].forEach(id=>{ document.getElementById(id).innerHTML = `<option value="">-</option>` + teacherOpts; });
+
+  const yearOpts = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
+  ['hr_year','as_year'].forEach(id=>{ document.getElementById(id).innerHTML = yearOpts; });
+
+  document.getElementById('hr_grade').innerHTML = grades.map(g=>`<option value="${g.grade_id}">${g.grade_name}</option>`).join('');
+  document.getElementById('as_subject').innerHTML = subjects.map(s=>`<option value="${s.subject_id}">${esc(s.subject_name)}</option>`).join('');
+
+  refreshHrClassrooms();
+  refreshAsClassrooms();
+}
+
+function refreshHrClassrooms(){
+  const yearId = document.getElementById('hr_year').value;
+  const gradeId = document.getElementById('hr_grade').value;
+  const opts = classrooms.filter(c=>String(c.academic_year_id)===String(yearId) && String(c.grade_id)===String(gradeId));
+  document.getElementById('hr_classroom').innerHTML = opts.length
+    ? opts.map(c=>`<option value="${c.classroom_id}">${c.room_name}</option>`).join('')
+    : `<option value="">ບໍ່ມີຫ້ອງ</option>`;
+}
+function refreshAsClassrooms(){
+  const yearId = document.getElementById('as_year').value;
+  const opts = classrooms.filter(c=>String(c.academic_year_id)===String(yearId));
+  document.getElementById('as_classroom').innerHTML = opts.length
+    ? opts.map(c=>{
+        const gName = grades.find(g=>g.grade_id===c.grade_id)?.grade_name || '';
+        return `<option value="${c.classroom_id}">${gName} - ${c.room_name}</option>`;
+      }).join('')
+    : `<option value="">ບໍ່ມີຫ້ອງ</option>`;
+  loadAssignments();
+}
+document.getElementById('hr_year').addEventListener('change', refreshHrClassrooms);
+document.getElementById('hr_grade').addEventListener('change', refreshHrClassrooms);
+document.getElementById('as_year').addEventListener('change', refreshAsClassrooms);
+document.getElementById('as_classroom').addEventListener('change', loadAssignments);
+
+// ---------- STAFF LIST ----------
+async function loadStaff(){
+  let q = sb.from('staff').select('*').order('first_name');
+  const status = document.getElementById('filterStatus').value;
+  if(status) q = q.eq('status', status);
+  const {data, error} = await q;
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+  staffList = data||[];
+
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+  let rows = staffList;
+  if(search){ rows = rows.filter(s => (s.staff_code||'').toLowerCase().includes(search) || (s.first_name+' '+s.last_name).toLowerCase().includes(search)); }
+
+  const body = document.getElementById('staffBody');
+  body.innerHTML = rows.map(s=>`
+    <tr>
+      <td><div class="avatar"></div></td>
+      <td>${esc(s.staff_code)}</td>
+      <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
+      <td>${esc(s.position||'-')}</td>
+      <td>${esc(s.department||'-')}</td>
+      <td>${esc(s.phone||'-')}</td>
+      <td><span class="badge ${s.status}">${s.status==='active'?'ປະຈຳການ':'ພົ້ນຕຳແໜ່ງ'}</span></td>
+      <td><button class="btn small secondary" onclick="openEditStaff(${s.staff_id})">✎</button></td>
+    </tr>`).join('');
+  document.getElementById('staffEmpty').style.display = rows.length ? 'none' : 'block';
+  buildSelects();
+}
+document.getElementById('searchInput').addEventListener('input', loadStaff);
+document.getElementById('filterStatus').addEventListener('change', loadStaff);
+
+const overlay = document.getElementById('staffOverlay');
+function resetForm(){
+  editingStaffId = null;
+  document.getElementById('modalTitle').textContent = 'ເພີ່ມຄູ/ພະນັກງານ';
+  ['f_code','f_position','f_first','f_last','f_dob','f_phone','f_department','f_hire'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_gender').value='';
+  document.getElementById('f_status').value='active';
+}
+document.getElementById('btnAddStaff').addEventListener('click', ()=>{ resetForm(); overlay.classList.add('open'); });
+document.getElementById('closeModal').addEventListener('click', ()=>overlay.classList.remove('open'));
+document.getElementById('cancelModal').addEventListener('click', ()=>overlay.classList.remove('open'));
+
+async function openEditStaff(id){
+  const {data:s, error} = await sb.from('staff').select('*').eq('staff_id', id).single();
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+  resetForm();
+  editingStaffId = id;
+  document.getElementById('modalTitle').textContent = 'ແກ້ໄຂຂໍ້ມູນ';
+  document.getElementById('f_code').value = s.staff_code||'';
+  document.getElementById('f_position').value = s.position||'';
+  document.getElementById('f_first').value = s.first_name||'';
+  document.getElementById('f_last').value = s.last_name||'';
+  document.getElementById('f_gender').value = s.gender||'';
+  document.getElementById('f_dob').value = s.date_of_birth||'';
+  document.getElementById('f_phone').value = s.phone||'';
+  document.getElementById('f_department').value = s.department||'';
+  document.getElementById('f_hire').value = s.hire_date||'';
+  document.getElementById('f_status').value = s.status||'active';
+  overlay.classList.add('open');
+}
+window.openEditStaff = openEditStaff;
+
+document.getElementById('saveStaff').addEventListener('click', async ()=>{
+  const code = document.getElementById('f_code').value.trim();
+  const first = document.getElementById('f_first').value.trim();
+  const last = document.getElementById('f_last').value.trim();
+  if(!code || !first || !last){ toast('ກະລຸນາປ້ອນ ລະຫັດ, ຊື່, ນາມສະກຸນ'); return; }
+  const payload = {
+    staff_code: code, first_name: first, last_name: last,
+    gender: document.getElementById('f_gender').value || null,
+    date_of_birth: document.getElementById('f_dob').value || null,
+    phone: document.getElementById('f_phone').value || null,
+    position: document.getElementById('f_position').value || null,
+    department: document.getElementById('f_department').value || null,
+    hire_date: document.getElementById('f_hire').value || null,
+    status: document.getElementById('f_status').value
+  };
+  let error;
+  if(editingStaffId){ ({error} = await sb.from('staff').update(payload).eq('staff_id', editingStaffId)); }
+  else { ({error} = await sb.from('staff').insert(payload)); }
+  if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
+  toast('ບັນທຶກສຳເລັດ');
+  overlay.classList.remove('open');
+  loadStaff();
+});
+
+// ---------- HOMEROOM ASSIGNMENT ----------
+document.getElementById('btnSaveHomeroom').addEventListener('click', async ()=>{
+  const classroomId = document.getElementById('hr_classroom').value;
+  const teacherId = document.getElementById('hr_teacher').value;
+  if(!classroomId){ toast('ບໍ່ພົບຫ້ອງຮຽນ'); return; }
+  const {error} = await sb.from('classrooms').update({homeroom_teacher_id: teacherId || null}).eq('classroom_id', classroomId);
+  if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
+  toast('ບັນທຶກຄູປະຈຳຫ້ອງສຳເລັດ');
+  loadReferenceData();
+});
+
+// ---------- SUBJECT ASSIGNMENT ----------
+async function loadAssignments(){
+  const classroomId = document.getElementById('as_classroom').value;
+  const body = document.getElementById('assignmentBody');
+  if(!classroomId){ body.innerHTML=''; document.getElementById('assignmentEmpty').style.display='block'; return; }
+
+  const {data, error} = await sb.from('teacher_subject_assignments')
+    .select('assignment_id, subjects(subject_name), staff(first_name,last_name), classrooms(room_name)')
+    .eq('classroom_id', classroomId);
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+
+  body.innerHTML = (data||[]).map(a=>`
+    <tr>
+      <td>${esc(a.classrooms?.room_name||'-')}</td>
+      <td>${esc(a.subjects?.subject_name||'-')}</td>
+      <td>${esc(a.staff?.first_name||'')} ${esc(a.staff?.last_name||'')}</td>
+      <td><button class="btn small secondary" onclick="deleteAssignment(${a.assignment_id})">✕</button></td>
+    </tr>`).join('');
+  document.getElementById('assignmentEmpty').style.display = (data||[]).length ? 'none' : 'block';
+}
+
+document.getElementById('btnAddAssignment').addEventListener('click', async ()=>{
+  const classroomId = document.getElementById('as_classroom').value;
+  const subjectId = document.getElementById('as_subject').value;
+  const teacherId = document.getElementById('as_teacher').value;
+  const yearId = document.getElementById('as_year').value;
+  if(!classroomId || !subjectId || !teacherId){ toast('ກະລຸນາເລືອກຫ້ອງ, ວິຊາ, ຄູຜູ້ສອນ'); return; }
+  const {error} = await sb.from('teacher_subject_assignments').insert({
+    classroom_id: classroomId, subject_id: subjectId, staff_id: teacherId, academic_year_id: yearId
+  });
+  if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
+  toast('ມອບໝາຍສຳເລັດ');
+  loadAssignments();
+});
+
+async function deleteAssignment(id){
+  const {error} = await sb.from('teacher_subject_assignments').delete().eq('assignment_id', id);
+  if(error){ toast('ລຶບຜິດພາດ: '+error.message); return; }
+  loadAssignments();
+}
+window.deleteAssignment = deleteAssignment;
+
+(async function init(){
+  await loadReferenceData();
+  await loadStaff();
+})();
+</script>
+</body>
+</html>

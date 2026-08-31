@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --paper:#F7F3EA;
@@ -84,6 +85,16 @@
   .toast{position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--paper); padding:12px 18px; border-radius:var(--radius); font-size:14px; box-shadow:0 8px 20px rgba(0,0,0,.25); z-index:99; display:none;}
   .toast.show{display:block;}
   .enrolled-title{font-family:'Noto Serif Lao',serif; margin-top:32px;}
+  .bulk-tabs{display:flex; gap:8px; margin-bottom:16px;}
+  .bulk-tabs button{flex:1; padding:10px; border:1px solid var(--line); background:var(--white); border-radius:var(--radius); cursor:pointer; font-family:'Noto Sans Lao',sans-serif; font-weight:600; font-size:13px; color:var(--ink-soft);}
+  .bulk-tabs button.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .bulk-panel{display:none;}
+  .bulk-panel.active{display:block;}
+  .drop-zone{border:2px dashed var(--gold); border-radius:var(--radius); padding:22px; text-align:center; background:var(--white); cursor:pointer; font-size:13px; color:var(--ink-soft); margin-bottom:14px;}
+  .preview-wrap{max-height:260px; overflow:auto; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px;}
+  .row-ok{color:var(--ok);}
+  .row-bad{color:var(--stamp);}
+  .progress-text{font-size:13px; color:var(--ink-soft); margin-top:8px;}
   .profile-head{display:flex; gap:16px; align-items:center; margin-bottom:18px;}
   .profile-head img, .profile-head .avatar-lg{width:72px;height:88px; border-radius:6px; object-fit:cover; border:1px solid var(--line); background:var(--paper-2);}
   .profile-head h3{font-family:'Noto Serif Lao',serif; margin:0 0 2px; font-size:19px;}
@@ -116,6 +127,9 @@
 <nav class="tabs">
   <button class="tab-btn active" data-tab="students" data-i18n="tabStudents">ລາຍຊື່ນັກຮຽນ</button>
   <button class="tab-btn" data-tab="enroll" data-i18n="tabEnroll">ລົງທະບຽນເຂົ້າຫ້ອງ</button>
+  <a href="staff.html" class="tab-btn" style="text-decoration:none; display:inline-block;">ຄູ-ພະນັກງານ</a>
+  <a href="academic.html" class="tab-btn" style="text-decoration:none; display:inline-block;">ວິຊາການ</a>
+  <a href="finance.html" class="tab-btn" style="text-decoration:none; display:inline-block;">ການເງິນ</a>
 </nav>
 
 <main>
@@ -133,6 +147,7 @@
         <option value="dropped" data-i18n="statusDropped">ອອກກາງຄັນ</option>
       </select>
       <button class="btn stamp" id="btnAddStudent" data-i18n="addStudent">+ ເພີ່ມນັກຮຽນ</button>
+      <button class="btn secondary" id="btnBulkImport" data-i18n="bulkImport">ນຳເຂົ້າ Excel/ຮູບ</button>
     </div>
     <table>
       <thead>
@@ -293,6 +308,63 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- ===== BULK IMPORT MODAL ===== -->
+<div class="overlay" id="bulkOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2 data-i18n="bulkTitle">ນຳເຂົ້ານັກຮຽນເປັນຈຳນວນຫຼາຍ</h2>
+      <button id="closeBulk">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="bulk-tabs">
+        <button class="bulk-tab-btn active" data-bulk="excel" data-i18n="bulkExcelTab">ນຳເຂົ້າຈາກ Excel</button>
+        <button class="bulk-tab-btn" data-bulk="photo" data-i18n="bulkPhotoTab">ອັບໂຫລດຮູບຫຼາຍຮູບ</button>
+      </div>
+
+      <!-- EXCEL PANEL -->
+      <div class="bulk-panel active" id="bulk-excel">
+        <div class="code-gen-row">
+          <div><label data-i18n="entryYear">ປີເຂົ້າຮຽນ</label><select id="bulk_year"></select></div>
+          <div><label data-i18n="entryGrade">ຊັ້ນເຂົ້າຮຽນ</label><select id="bulk_grade"></select></div>
+          <button class="btn small secondary" id="btnDownloadTemplate" type="button" data-i18n="downloadTemplate">ດາວໂຫລດແບບຟອມ</button>
+        </div>
+        <div class="drop-zone" onclick="document.getElementById('excelInput').click()" id="excelDropZone" data-i18n="excelDropZone">
+          ກົດເພື່ອເລືອກໄຟລ໌ Excel (.xlsx) ທີ່ຕື່ມຂໍ້ມູນນັກຮຽນແລ້ວ
+        </div>
+        <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none;">
+        <div class="preview-wrap" id="excelPreview" style="display:none;">
+          <table><thead><tr>
+            <th data-i18n="colCode">ລະຫັດ</th><th data-i18n="colName">ຊື່-ນາມສະກຸນ</th><th data-i18n="labelDob">ວັນເກີດ</th><th></th>
+          </tr></thead><tbody id="excelPreviewBody"></tbody></table>
+        </div>
+        <div class="progress-text" id="excelProgress"></div>
+        <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
+          <button class="btn stamp" id="btnConfirmExcelImport" disabled data-i18n="confirmImport">ນຳເຂົ້າ</button>
+        </div>
+      </div>
+
+      <!-- PHOTO PANEL -->
+      <div class="bulk-panel" id="bulk-photo">
+        <p class="progress-text" data-i18n="photoMatchHint">ຊື່ໄຟລ໌ຮູບຕ້ອງກົງກັບ "ລະຫັດນັກຮຽນ" (ເຊັ່ນ 26-DPY-P1-001.jpg) ຈຶ່ງຈະຈັບຄູ່ອັດຕະໂນມັດ</p>
+        <div class="drop-zone" onclick="document.getElementById('photoBulkInput').click()" id="photoDropZone" data-i18n="photoDropZone">
+          ກົດເພື່ອເລືອກຮູບຫຼາຍຮູບພ້ອມກັນ
+        </div>
+        <input type="file" id="photoBulkInput" accept="image/*" multiple style="display:none;">
+        <div class="preview-wrap" id="photoPreview" style="display:none;">
+          <table><thead><tr>
+            <th data-i18n="colCode">ຊື່ໄຟລ໌ / ລະຫັດ</th><th data-i18n="colName">ຊື່ນັກຮຽນ</th><th></th>
+          </tr></thead><tbody id="photoPreviewBody"></tbody></table>
+        </div>
+        <div class="progress-text" id="photoProgress"></div>
+        <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
+          <button class="btn stamp" id="btnConfirmPhotoImport" disabled data-i18n="confirmUpload">ອັບໂຫລດ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script>
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
@@ -384,7 +456,26 @@ const I18N = {
     saveSuccess: "ບັນທຶກສຳເລັດ",
     enrollError: "ລົງທະບຽນຜິດພາດ: ",
     enrollSuccess: (n)=>`ລົງທະບຽນສຳເລັດ ${n} ຄົນ`,
-    codeGenError: "ກະລຸນາເລືອກປີ ແລະ ຊັ້ນເຂົ້າຮຽນກ່ອນ"
+    codeGenError: "ກະລຸນາເລືອກປີ ແລະ ຊັ້ນເຂົ້າຮຽນກ່ອນ",
+    bulkImport: "ນຳເຂົ້າ Excel/ຮູບ",
+    bulkTitle: "ນຳເຂົ້ານັກຮຽນເປັນຈຳນວນຫຼາຍ",
+    bulkExcelTab: "ນຳເຂົ້າຈາກ Excel",
+    bulkPhotoTab: "ອັບໂຫລດຮູບຫຼາຍຮູບ",
+    downloadTemplate: "ດາວໂຫລດແບບຟອມ",
+    excelDropZone: "ກົດເພື່ອເລືອກໄຟລ໌ Excel (.xlsx) ທີ່ຕື່ມຂໍ້ມູນນັກຮຽນແລ້ວ",
+    confirmImport: "ນຳເຂົ້າ",
+    photoMatchHint: 'ຊື່ໄຟລ໌ຮູບຕ້ອງກົງກັບ "ລະຫັດນັກຮຽນ" (ເຊັ່ນ 26-DPY-P1-001.jpg) ຈຶ່ງຈະຈັບຄູ່ອັດຕະໂນມັດ',
+    photoDropZone: "ກົດເພື່ອເລືອກຮູບຫຼາຍຮູບພ້ອມກັນ",
+    confirmUpload: "ອັບໂຫລດ",
+    bulkNeedGrade: "ກະລຸນາເລືອກປີ ແລະ ຊັ້ນເຂົ້າຮຽນກ່ອນ",
+    bulkParseError: "ອ່ານໄຟລ໌ Excel ຜິດພາດ ຫຼືບໍ່ພົບຂໍ້ມູນ",
+    bulkImporting: (done,total)=>`ກຳລັງນຳເຂົ້າ ${done}/${total} ...`,
+    bulkImportDone: (n)=>`ນຳເຂົ້າສຳເລັດ ${n} ຄົນ`,
+    bulkRowInvalid: "(ຂາດຊື່ ຫຼື ນາມສະກຸນ)",
+    photoMatched: (n)=>`ຈັບຄູ່ໄດ້ ${n} ຮູບ`,
+    photoUnmatched: "ບໍ່ພົບລະຫັດນັກຮຽນນີ້",
+    photoUploading: (done,total)=>`ກຳລັງອັບໂຫລດ ${done}/${total} ...`,
+    photoUploadDone: (n)=>`ອັບໂຫລດສຳເລັດ ${n} ຮູບ`
   },
   en: {
     pageTitle: "Student Registry | School Management System",
@@ -468,7 +559,26 @@ const I18N = {
     saveSuccess: "Saved successfully",
     enrollError: "Error enrolling: ",
     enrollSuccess: (n)=>`Successfully enrolled ${n} student(s)`,
-    codeGenError: "Please select entry year and entry grade first"
+    codeGenError: "Please select entry year and entry grade first",
+    bulkImport: "Import Excel/Photos",
+    bulkTitle: "Bulk Import Students",
+    bulkExcelTab: "Import from Excel",
+    bulkPhotoTab: "Bulk Photo Upload",
+    downloadTemplate: "Download Template",
+    excelDropZone: "Click to select a filled-in Excel file (.xlsx)",
+    confirmImport: "Import",
+    photoMatchHint: 'Photo file names must match the "Student Code" (e.g. 26-DPY-P1-001.jpg) to auto-match',
+    photoDropZone: "Click to select multiple photos at once",
+    confirmUpload: "Upload",
+    bulkNeedGrade: "Please select entry year and entry grade first",
+    bulkParseError: "Error reading Excel file or no data found",
+    bulkImporting: (done,total)=>`Importing ${done}/${total} ...`,
+    bulkImportDone: (n)=>`Successfully imported ${n} student(s)`,
+    bulkRowInvalid: "(missing first or last name)",
+    photoMatched: (n)=>`${n} photo(s) matched`,
+    photoUnmatched: "Student code not found",
+    photoUploading: (done,total)=>`Uploading ${done}/${total} ...`,
+    photoUploadDone: (n)=>`Successfully uploaded ${n} photo(s)`
   }
 };
 let currentLang = 'lo';
@@ -589,6 +699,14 @@ function rebuildReferenceSelects(){
   const codeGrade = document.getElementById('code_grade');
   codeGrade.innerHTML = '';
   grades.forEach(gr=>{ codeGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`; });
+
+  const bulkYear = document.getElementById('bulk_year');
+  bulkYear.innerHTML = '';
+  years.forEach(yr=>{ bulkYear.innerHTML += `<option value="${yr.academic_year_id}" ${yr.is_current?'selected':''}>${yr.year_name}</option>`; });
+
+  const bulkGrade = document.getElementById('bulk_grade');
+  bulkGrade.innerHTML = '';
+  grades.forEach(gr=>{ bulkGrade.innerHTML += `<option value="${gr.grade_id}">${gr.grade_name}</option>`; });
 }
 
 // ---------- STUDENT CODE GENERATION ----------
@@ -801,6 +919,7 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
   if(photo_url) payload.photo_url = photo_url;
 
   let studentId = editingStudentId;
+  const isNewStudent = !editingStudentId;
   if(editingStudentId){
     const {error} = await sb.from('students').update(payload).eq('student_id', editingStudentId);
     if(error){ toast(t('saveError')+error.message); return; }
@@ -826,6 +945,22 @@ document.getElementById('saveStudent').addEventListener('click', async ()=>{
       const {data:newGuardian, error:gErr} = await sb.from('guardians').insert(gPayload).select().single();
       if(!gErr){
         await sb.from('student_guardians').insert({ student_id: studentId, guardian_id: newGuardian.guardian_id, is_primary_contact: true });
+      }
+    }
+  }
+
+  // Auto-enroll new students into the classroom matching their entry year/grade, if one exists.
+  if(isNewStudent){
+    const entryYearId = document.getElementById('code_year').value;
+    const entryGradeId = document.getElementById('code_grade').value;
+    if(entryYearId && entryGradeId){
+      const matchingRoom = classrooms.find(c =>
+        String(c.academic_year_id)===String(entryYearId) && String(c.grade_id)===String(entryGradeId));
+      if(matchingRoom){
+        await sb.from('student_enrollments').insert({
+          student_id: studentId, classroom_id: matchingRoom.classroom_id,
+          academic_year_id: entryYearId, enrollment_status: 'active'
+        });
       }
     }
   }
@@ -928,6 +1063,209 @@ async function openStudentProfile(id){
   `;
 }
 window.openStudentProfile = openStudentProfile;
+
+// ---------- BULK IMPORT (Excel + Photos) ----------
+const bulkOverlay = document.getElementById('bulkOverlay');
+document.getElementById('btnBulkImport').addEventListener('click', ()=>{
+  document.getElementById('excelPreview').style.display='none';
+  document.getElementById('excelPreviewBody').innerHTML='';
+  document.getElementById('excelProgress').textContent='';
+  document.getElementById('btnConfirmExcelImport').disabled = true;
+  document.getElementById('photoPreview').style.display='none';
+  document.getElementById('photoPreviewBody').innerHTML='';
+  document.getElementById('photoProgress').textContent='';
+  document.getElementById('btnConfirmPhotoImport').disabled = true;
+  parsedExcelRows = [];
+  matchedPhotoFiles = [];
+  bulkOverlay.classList.add('open');
+});
+document.getElementById('closeBulk').addEventListener('click', ()=>bulkOverlay.classList.remove('open'));
+
+document.querySelectorAll('.bulk-tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.bulk-tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.bulk-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('bulk-'+btn.dataset.bulk).classList.add('active');
+  });
+});
+
+// ---- Excel template download ----
+document.getElementById('btnDownloadTemplate').addEventListener('click', ()=>{
+  const headers = ['student_code','first_name','last_name','first_name_en','last_name_en','gender','date_of_birth','nationality','village','district','province','guardian_name','guardian_relationship','guardian_phone','guardian_occupation'];
+  const sample = ['','ສົມສີ','ວົງໄຊ','Somsy','Vongxay','ຊາຍ','2018-05-12','ລາວ','ບ້ານໂພນສະຫວັນ','ໄກສອນ ພົມວິຫານ','ສະຫວັນນະເຂດ','ພໍ່ ວົງໄຊ','ພໍ່','2055699787',''];
+  const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Students');
+  XLSX.writeFile(wb, 'student-import-template.xlsx');
+});
+
+// ---- Excel parse & preview ----
+let parsedExcelRows = [];
+document.getElementById('excelInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const wb = XLSX.read(ev.target.result, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      parsedExcelRows = rows;
+      renderExcelPreview();
+    } catch(err){
+      toast(t('bulkParseError'));
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function renderExcelPreview(){
+  const body = document.getElementById('excelPreviewBody');
+  const wrap = document.getElementById('excelPreview');
+  if(parsedExcelRows.length===0){ wrap.style.display='none'; document.getElementById('btnConfirmExcelImport').disabled=true; return; }
+  wrap.style.display='block';
+  body.innerHTML = parsedExcelRows.map(r=>{
+    const valid = (r.first_name||'').toString().trim() && (r.last_name||'').toString().trim();
+    return `<tr>
+      <td>${esc(r.student_code||'—')}</td>
+      <td class="${valid?'row-ok':'row-bad'}">${esc(r.first_name||'')} ${esc(r.last_name||'')} ${valid?'':t('bulkRowInvalid')}</td>
+      <td>${esc(r.date_of_birth||'-')}</td>
+      <td></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('btnConfirmExcelImport').disabled = false;
+}
+
+document.getElementById('btnConfirmExcelImport').addEventListener('click', async ()=>{
+  const yearId = document.getElementById('bulk_year').value;
+  const gradeId = document.getElementById('bulk_grade').value;
+  if(!yearId || !gradeId){ toast(t('bulkNeedGrade')); return; }
+
+  const validRows = parsedExcelRows.filter(r => (r.first_name||'').toString().trim() && (r.last_name||'').toString().trim());
+  if(validRows.length===0){ toast(t('bulkParseError')); return; }
+
+  const yearObj = years.find(y=>String(y.academic_year_id)===String(yearId));
+  const gradeObj = grades.find(g=>String(g.grade_id)===String(gradeId));
+  const yy = (yearObj.year_name.match(/\d{4}/)?.[0] || '').slice(-2);
+  const gCode = gradeToCode(gradeObj.grade_name);
+  const prefix = `${yy}-${SCHOOL_CODE}-${gCode}-`;
+
+  const {data: existingCodes} = await sb.from('students').select('student_code').ilike('student_code', prefix+'%');
+  let seq = 0;
+  (existingCodes||[]).forEach(r=>{
+    const parts = r.student_code.split('-');
+    const n = parseInt(parts[parts.length-1],10);
+    if(!isNaN(n) && n>seq) seq = n;
+  });
+
+  const matchingRoom = classrooms.find(c => String(c.academic_year_id)===String(yearId) && String(c.grade_id)===String(gradeId));
+
+  let done = 0;
+  const progress = document.getElementById('excelProgress');
+  document.getElementById('btnConfirmExcelImport').disabled = true;
+
+  for(const row of validRows){
+    let code = (row.student_code||'').toString().trim();
+    if(!code){ seq++; code = prefix+String(seq).padStart(3,'0'); }
+
+    const payload = {
+      student_code: code,
+      first_name: (row.first_name||'').toString().trim(),
+      last_name: (row.last_name||'').toString().trim(),
+      first_name_en: (row.first_name_en||'').toString().trim() || null,
+      last_name_en: (row.last_name_en||'').toString().trim() || null,
+      gender: (row.gender||'').toString().trim() || null,
+      date_of_birth: (row.date_of_birth||'').toString().trim() || null,
+      nationality: (row.nationality||'').toString().trim() || null,
+      village: (row.village||'').toString().trim() || null,
+      district: (row.district||'').toString().trim() || null,
+      province: (row.province||'').toString().trim() || null,
+      status: 'active'
+    };
+
+    const {data: inserted, error} = await sb.from('students').insert(payload).select().single();
+    if(!error && inserted){
+      const gName = (row.guardian_name||'').toString().trim();
+      if(gName){
+        const {data:newGuardian, error:gErr} = await sb.from('guardians').insert({
+          full_name: gName,
+          relationship: (row.guardian_relationship||'').toString().trim() || null,
+          phone: (row.guardian_phone||'').toString().trim() || null,
+          occupation: (row.guardian_occupation||'').toString().trim() || null
+        }).select().single();
+        if(!gErr){
+          await sb.from('student_guardians').insert({ student_id: inserted.student_id, guardian_id: newGuardian.guardian_id, is_primary_contact: true });
+        }
+      }
+      if(matchingRoom){
+        await sb.from('student_enrollments').insert({
+          student_id: inserted.student_id, classroom_id: matchingRoom.classroom_id,
+          academic_year_id: yearId, enrollment_status: 'active'
+        });
+      }
+    }
+    done++;
+    progress.textContent = t('bulkImporting')(done, validRows.length);
+  }
+
+  progress.textContent = t('bulkImportDone')(done);
+  toast(t('bulkImportDone')(done));
+  loadStudents();
+  loadAutocompleteData();
+});
+
+// ---- Bulk photo upload ----
+let matchedPhotoFiles = [];
+document.getElementById('photoBulkInput').addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  if(files.length===0) return;
+
+  const {data: allS} = await sb.from('students').select('student_id, student_code, first_name, last_name');
+  const byCode = {};
+  (allS||[]).forEach(s=>{ byCode[s.student_code.toUpperCase()] = s; });
+
+  matchedPhotoFiles = [];
+  const body = document.getElementById('photoPreviewBody');
+  document.getElementById('photoPreview').style.display = 'block';
+  let matchedCount = 0;
+
+  body.innerHTML = files.map(file=>{
+    const codeGuess = file.name.replace(/\.[^.]+$/,'').toUpperCase();
+    const student = byCode[codeGuess];
+    if(student){
+      matchedCount++;
+      matchedPhotoFiles.push({file, student});
+      return `<tr><td class="row-ok">${esc(file.name)}</td><td>${esc(student.first_name)} ${esc(student.last_name)}</td><td>✓</td></tr>`;
+    }
+    return `<tr><td class="row-bad">${esc(file.name)}</td><td>-</td><td class="row-bad">${t('photoUnmatched')}</td></tr>`;
+  }).join('');
+
+  document.getElementById('photoProgress').textContent = t('photoMatched')(matchedCount);
+  document.getElementById('btnConfirmPhotoImport').disabled = matchedCount===0;
+});
+
+document.getElementById('btnConfirmPhotoImport').addEventListener('click', async ()=>{
+  const progress = document.getElementById('photoProgress');
+  document.getElementById('btnConfirmPhotoImport').disabled = true;
+  let done = 0;
+
+  for(const {file, student} of matchedPhotoFiles){
+    const ext = file.name.split('.').pop();
+    const path = `${student.student_code}-${Date.now()}.${ext}`;
+    const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, file, {upsert:true});
+    if(!upErr){
+      const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+      await sb.from('students').update({photo_url: pub.publicUrl}).eq('student_id', student.student_id);
+    }
+    done++;
+    progress.textContent = t('photoUploading')(done, matchedPhotoFiles.length);
+  }
+
+  progress.textContent = t('photoUploadDone')(done);
+  toast(t('photoUploadDone')(done));
+  loadStudents();
+});
 
 // ---------- ENROLLMENT ----------
 function refreshEnrollClassroomOptions(){

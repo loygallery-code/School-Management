@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ວິຊາການ | ລະບົບບໍລິຫານໂຮງຮຽນ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ --paper:#F7F3EA; --paper-2:#EFE8D8; --ink:#1D2B4F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFDF8; --radius:6px; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans Lao','Noto Sans',sans-serif; min-height:100vh;}
+  header.book-header{background:var(--ink); color:var(--paper); padding:28px 32px 22px; position:relative; border-bottom:4px double var(--gold);}
+  header.book-header h1{font-family:'Noto Serif Lao',serif; font-weight:700; font-size:26px; margin:0 0 4px;}
+  header.book-header p{margin:0; font-size:14px; color:#C9CEDC;}
+  nav.tabs{display:flex; gap:2px; background:var(--paper-2); padding:0 32px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  nav.tabs button, nav.tabs a{font-family:'Noto Sans Lao',sans-serif; font-size:15px; font-weight:600; padding:14px 22px; background:transparent; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; position:relative; top:1px; text-decoration:none; display:inline-block;}
+  nav.tabs button.active, nav.tabs a.active{color:var(--ink); border-bottom:3px solid var(--stamp); background:var(--paper);}
+  main{padding:28px 32px 60px; max-width:1150px; margin:0 auto;}
+  .panel{display:none;} .panel.active{display:block;}
+  .steps{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .steps div{flex:1; min-width:160px; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  input, select{width:100%; font-family:inherit; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
+  .btn{font-family:'Noto Sans Lao',sans-serif; font-weight:600; font-size:14px; padding:10px 18px; border-radius:var(--radius); border:1px solid var(--ink); background:var(--ink); color:var(--paper); cursor:pointer;}
+  .btn.stamp{background:var(--stamp); border-color:var(--stamp); color:#fff;}
+  .btn.small{padding:6px 12px; font-size:12px;}
+  .btn:hover{opacity:.9;}
+  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
+  td{padding:8px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  td input[type=number]{width:80px;} td input[type=text]{width:70px;}
+  .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
+  .status-pick{display:flex; gap:4px;}
+  .status-pick button{padding:6px 10px; font-size:12px; border-radius:20px; border:1px solid var(--line); background:var(--white); cursor:pointer; color:var(--ink-soft);}
+  .status-pick button.sel-present{background:var(--ok); color:#fff; border-color:var(--ok);}
+  .status-pick button.sel-absent{background:var(--stamp); color:#fff; border-color:var(--stamp);}
+  .status-pick button.sel-late{background:var(--gold); color:#fff; border-color:var(--gold);}
+  .status-pick button.sel-excused{background:var(--ink-soft); color:#fff; border-color:var(--ink-soft);}
+  .toast{position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--paper); padding:12px 18px; border-radius:var(--radius); font-size:14px; box-shadow:0 8px 20px rgba(0,0,0,.25); z-index:99; display:none;}
+  .toast.show{display:block;}
+  @media(max-width:640px){ main{padding:20px 16px 60px;} nav.tabs{padding:0 16px; overflow-x:auto;} }
+</style>
+</head>
+<body>
+
+<header class="book-header">
+  <h1>ວິຊາການ</h1>
+  <p>ບັນທຶກຄະແນນ ແລະ ການເຂົ້າຮຽນ</p>
+</header>
+
+<nav class="tabs">
+  <a href="index.html">ນັກຮຽນ</a>
+  <a href="staff.html">ຄູ-ພະນັກງານ</a>
+  <button class="tab-btn active" data-tab="scores">ບັນທຶກຄະແນນ</button>
+  <button class="tab-btn" data-tab="attendance">ການເຂົ້າຮຽນ</button>
+  <a href="finance.html">ການເງິນ</a>
+</nav>
+
+<main>
+  <!-- ===== SCORES ===== -->
+  <section id="panel-scores" class="panel active">
+    <div class="steps">
+      <div><label>ປີການສຶກສາ</label><select id="sc_year"></select></div>
+      <div><label>ຫ້ອງຮຽນ</label><select id="sc_classroom"></select></div>
+      <div><label>ພາກຮຽນ</label><select id="sc_term"></select></div>
+      <div><label>ວິຊາ</label><select id="sc_subject"></select></div>
+    </div>
+    <table>
+      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຄະແນນສະເລ່ຍ (/100)</th><th>ເກຣດ</th></tr></thead>
+      <tbody id="scoreBody"></tbody>
+    </table>
+    <div id="scoreEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ, ພາກຮຽນ, ວິຊາ ກ່ອນ</div>
+    <div style="margin-top:16px;"><button class="btn stamp" id="btnSaveScores">ບັນທຶກຄະແນນທັງໝົດ</button></div>
+  </section>
+
+  <!-- ===== ATTENDANCE ===== -->
+  <section id="panel-attendance" class="panel">
+    <div class="steps">
+      <div><label>ປີການສຶກສາ</label><select id="at_year"></select></div>
+      <div><label>ຫ້ອງຮຽນ</label><select id="at_classroom"></select></div>
+      <div><label>ວັນທີ່</label><input type="date" id="at_date"></div>
+    </div>
+    <table>
+      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ສະຖານະ</th></tr></thead>
+      <tbody id="attendanceBody"></tbody>
+    </table>
+    <div id="attendanceEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ ແລະ ວັນທີ່ ກ່ອນ</div>
+    <div style="margin-top:16px;"><button class="btn stamp" id="btnSaveAttendance">ບັນທຶກການເຂົ້າຮຽນ</button></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
+function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+let grades=[], years=[], classrooms=[], subjects=[], terms=[];
+
+async function loadReferenceData(){
+  const [{data:g},{data:y},{data:c},{data:sub}] = await Promise.all([
+    sb.from('grade_levels').select('*').order('grade_order'),
+    sb.from('academic_years').select('*').order('start_date',{ascending:false}),
+    sb.from('classrooms').select('*'),
+    sb.from('subjects').select('*').order('subject_name')
+  ]);
+  grades=g||[]; years=y||[]; classrooms=c||[]; subjects=sub||[];
+
+  const yearOpts = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
+  document.getElementById('sc_year').innerHTML = yearOpts;
+  document.getElementById('at_year').innerHTML = yearOpts;
+  document.getElementById('sc_subject').innerHTML = subjects.map(s=>`<option value="${s.subject_id}">${esc(s.subject_name)}</option>`).join('');
+  document.getElementById('at_date').value = new Date().toISOString().slice(0,10);
+
+  await refreshScClassrooms();
+  await refreshAtClassrooms();
+}
+
+function classroomLabel(c){
+  const gName = grades.find(g=>g.grade_id===c.grade_id)?.grade_name || '';
+  return `${gName} - ${c.room_name}`;
+}
+
+async function refreshScClassrooms(){
+  const yearId = document.getElementById('sc_year').value;
+  const opts = classrooms.filter(c=>String(c.academic_year_id)===String(yearId));
+  document.getElementById('sc_classroom').innerHTML = opts.length ? opts.map(c=>`<option value="${c.classroom_id}">${classroomLabel(c)}</option>`).join('') : `<option value="">ບໍ່ມີຫ້ອງ</option>`;
+  await refreshTerms();
+}
+async function refreshTerms(){
+  const yearId = document.getElementById('sc_year').value;
+  const {data} = await sb.from('terms').select('*').eq('academic_year_id', yearId);
+  terms = data||[];
+  document.getElementById('sc_term').innerHTML = terms.length ? terms.map(t=>`<option value="${t.term_id}">${esc(t.term_name)}</option>`).join('') : `<option value="">ບໍ່ມີພາກຮຽນ</option>`;
+  loadScoreTable();
+}
+async function refreshAtClassrooms(){
+  const yearId = document.getElementById('at_year').value;
+  const opts = classrooms.filter(c=>String(c.academic_year_id)===String(yearId));
+  document.getElementById('at_classroom').innerHTML = opts.length ? opts.map(c=>`<option value="${c.classroom_id}">${classroomLabel(c)}</option>`).join('') : `<option value="">ບໍ່ມີຫ້ອງ</option>`;
+  loadAttendanceTable();
+}
+document.getElementById('sc_year').addEventListener('change', refreshScClassrooms);
+document.getElementById('sc_classroom').addEventListener('change', loadScoreTable);
+document.getElementById('sc_term').addEventListener('change', loadScoreTable);
+document.getElementById('sc_subject').addEventListener('change', loadScoreTable);
+document.getElementById('at_year').addEventListener('change', refreshAtClassrooms);
+document.getElementById('at_classroom').addEventListener('change', loadAttendanceTable);
+document.getElementById('at_date').addEventListener('change', loadAttendanceTable);
+
+// ---------- SCORES ----------
+async function loadScoreTable(){
+  const classroomId = document.getElementById('sc_classroom').value;
+  const termId = document.getElementById('sc_term').value;
+  const subjectId = document.getElementById('sc_subject').value;
+  const body = document.getElementById('scoreBody');
+  if(!classroomId || !termId || !subjectId){ body.innerHTML=''; document.getElementById('scoreEmpty').style.display='block'; return; }
+  document.getElementById('scoreEmpty').style.display='none';
+
+  const {data:enrolled, error} = await sb.from('student_enrollments')
+    .select('students(student_id, student_code, first_name, last_name)')
+    .eq('classroom_id', classroomId);
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+
+  const studentIds = (enrolled||[]).map(e=>e.students.student_id);
+  const {data:existing} = await sb.from('term_results').select('*')
+    .eq('term_id', termId).eq('subject_id', subjectId).in('student_id', studentIds.length?studentIds:[0]);
+  const existingMap = {};
+  (existing||[]).forEach(r=>{ existingMap[r.student_id] = r; });
+
+  body.innerHTML = (enrolled||[]).map(e=>{
+    const s = e.students;
+    const ex = existingMap[s.student_id];
+    return `<tr data-student="${s.student_id}">
+      <td>${esc(s.student_code)}</td>
+      <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
+      <td><input type="number" min="0" max="100" step="0.1" class="score-input" value="${ex?ex.average_score:''}"></td>
+      <td><input type="text" class="grade-input" value="${ex?esc(ex.grade_letter||''):''}" placeholder="A/B/C"></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('scoreEmpty').style.display = (enrolled||[]).length ? 'none' : 'block';
+}
+
+document.getElementById('btnSaveScores').addEventListener('click', async ()=>{
+  const termId = document.getElementById('sc_term').value;
+  const subjectId = document.getElementById('sc_subject').value;
+  if(!termId || !subjectId){ toast('ກະລຸນາເລືອກພາກຮຽນ ແລະ ວິຊາ'); return; }
+
+  const rows = document.querySelectorAll('#scoreBody tr');
+  let saved = 0;
+  for(const row of rows){
+    const studentId = row.dataset.student;
+    const score = row.querySelector('.score-input').value;
+    const gradeLetter = row.querySelector('.grade-input').value.trim();
+    if(score === '') continue;
+
+    const {data:existing} = await sb.from('term_results').select('result_id')
+      .eq('student_id', studentId).eq('term_id', termId).eq('subject_id', subjectId).maybeSingle();
+
+    const payload = { student_id: studentId, term_id: termId, subject_id: subjectId, average_score: parseFloat(score), grade_letter: gradeLetter || null };
+    if(existing){ await sb.from('term_results').update(payload).eq('result_id', existing.result_id); }
+    else { await sb.from('term_results').insert(payload); }
+    saved++;
+  }
+  toast(`ບັນທຶກຄະແນນສຳເລັດ ${saved} ຄົນ`);
+});
+
+// ---------- ATTENDANCE ----------
+async function loadAttendanceTable(){
+  const classroomId = document.getElementById('at_classroom').value;
+  const date = document.getElementById('at_date').value;
+  const body = document.getElementById('attendanceBody');
+  if(!classroomId || !date){ body.innerHTML=''; document.getElementById('attendanceEmpty').style.display='block'; return; }
+  document.getElementById('attendanceEmpty').style.display='none';
+
+  const {data:enrolled, error} = await sb.from('student_enrollments')
+    .select('students(student_id, student_code, first_name, last_name)')
+    .eq('classroom_id', classroomId);
+  if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+
+  const studentIds = (enrolled||[]).map(e=>e.students.student_id);
+  const {data:existing} = await sb.from('attendance').select('*')
+    .eq('classroom_id', classroomId).eq('attendance_date', date).in('student_id', studentIds.length?studentIds:[0]);
+  const existingMap = {};
+  (existing||[]).forEach(r=>{ existingMap[r.student_id] = r.status; });
+
+  const statuses = [['present','ມາຮຽນ'],['absent','ຂາດ'],['late','ມາຊ້າ'],['excused','ລາ']];
+
+  body.innerHTML = (enrolled||[]).map(e=>{
+    const s = e.students;
+    const cur = existingMap[s.student_id] || 'present';
+    const btns = statuses.map(([val,label])=>`<button type="button" class="${cur===val?'sel-'+val:''}" data-val="${val}" onclick="setAttendance(this,${s.student_id})">${label}</button>`).join('');
+    return `<tr data-student="${s.student_id}"><td>${esc(s.student_code)}</td><td>${esc(s.first_name)} ${esc(s.last_name)}</td><td><div class="status-pick">${btns}</div></td></tr>`;
+  }).join('');
+  document.getElementById('attendanceEmpty').style.display = (enrolled||[]).length ? 'none' : 'block';
+}
+
+function setAttendance(btn, studentId){
+  const row = btn.closest('tr');
+  row.querySelectorAll('.status-pick button').forEach(b=>b.className='');
+  btn.className = 'sel-'+btn.dataset.val;
+}
+window.setAttendance = setAttendance;
+
+document.getElementById('btnSaveAttendance').addEventListener('click', async ()=>{
+  const classroomId = document.getElementById('at_classroom').value;
+  const date = document.getElementById('at_date').value;
+  if(!classroomId || !date){ toast('ກະລຸນາເລືອກຫ້ອງ ແລະ ວັນທີ່'); return; }
+
+  const rows = document.querySelectorAll('#attendanceBody tr');
+  let saved = 0;
+  for(const row of rows){
+    const studentId = row.dataset.student;
+    const selectedBtn = row.querySelector('.status-pick button[class^="sel-"]');
+    const status = selectedBtn ? selectedBtn.dataset.val : 'present';
+
+    const {data:existing} = await sb.from('attendance').select('attendance_id')
+      .eq('student_id', studentId).eq('classroom_id', classroomId).eq('attendance_date', date).maybeSingle();
+
+    const payload = { student_id: studentId, classroom_id: classroomId, attendance_date: date, status };
+    if(existing){ await sb.from('attendance').update(payload).eq('attendance_id', existing.attendance_id); }
+    else { await sb.from('attendance').insert(payload); }
+    saved++;
+  }
+  toast(`ບັນທຶກການເຂົ້າຮຽນສຳເລັດ ${saved} ຄົນ`);
+});
+
+loadReferenceData();
+</script>
+</body>
+</html>
