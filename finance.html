@@ -109,9 +109,15 @@
       <div class="section-title">ປະເພດຄ່າທຳນຽມ</div>
       <div class="toolbar">
         <input type="text" id="ft_name" placeholder="ຊື່ (ເຊັ່ນ ຄ່າຮຽນ, ຄ່າກິດຈະກຳ)">
+        <select id="ft_unit">
+          <option value="ຄັ້ງດຽວ">ຄັ້ງດຽວ (ຕໍ່ປີ)</option>
+          <option value="ລາຍເດືອນ">ລາຍເດືອນ</option>
+          <option value="ລາຍພາກຮຽນ">ລາຍພາກຮຽນ</option>
+          <option value="ລາຍປີ">ລາຍປີ</option>
+        </select>
         <button class="btn stamp" id="btnAddFeeType">+ ເພີ່ມ</button>
       </div>
-      <table><thead><tr><th>ຊື່ປະເພດ</th><th></th></tr></thead><tbody id="feeTypeBody"></tbody></table>
+      <table><thead><tr><th>ຊື່ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th></th></tr></thead><tbody id="feeTypeBody"></tbody></table>
     </div>
 
     <div class="card">
@@ -123,7 +129,7 @@
         <div><label>ຈຳນວນເງິນ (ກີບ)</label><input type="number" id="fs_amount" min="0"></div>
       </div>
       <button class="btn stamp" id="btnAddFeeStructure">+ ກຳນົດຄ່າທຳນຽມ</button>
-      <table style="margin-top:16px;"><thead><tr><th>ປະເພດ</th><th>ຊັ້ນ</th><th>ປີ</th><th>ຈຳນວນເງິນ</th><th></th></tr></thead><tbody id="feeStructureBody"></tbody></table>
+      <table style="margin-top:16px;"><thead><tr><th>ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th>ຊັ້ນ</th><th>ປີ</th><th>ຈຳນວນເງິນ</th><th></th></tr></thead><tbody id="feeStructureBody"></tbody></table>
     </div>
   </section>
 
@@ -203,7 +209,7 @@ async function loadReferenceData(){
     sb.from('academic_years').select('*').order('start_date',{ascending:false}),
     sb.from('classrooms').select('*'),
     sb.from('fee_types').select('*').order('fee_name'),
-    sb.from('fee_structure').select('*, fee_types(fee_name), grade_levels(grade_name), academic_years(year_name)')
+    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), grade_levels(grade_name), academic_years(year_name)')
   ]);
   grades=g||[]; years=y||[]; classrooms=c||[]; feeTypes=ft||[]; feeStructures=fs||[];
   buildSelects();
@@ -217,23 +223,24 @@ function classroomLabel(c){
 }
 
 function buildSelects(){
-  document.getElementById('fs_type').innerHTML = feeTypes.map(f=>`<option value="${f.fee_type_id}">${esc(f.fee_name)}</option>`).join('');
+  document.getElementById('fs_type').innerHTML = feeTypes.map(f=>`<option value="${f.fee_type_id}">${esc(f.fee_name)} (${esc(f.billing_unit||'ຄັ້ງດຽວ')})</option>`).join('');
   document.getElementById('fs_grade').innerHTML = grades.map(g=>`<option value="${g.grade_id}">${g.grade_name}</option>`).join('');
   document.getElementById('fs_year').innerHTML = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
   document.getElementById('inv_classroom').innerHTML = classrooms.map(c=>`<option value="${c.classroom_id}">${classroomLabel(c)}</option>`).join('');
-  document.getElementById('inv_feestructure').innerHTML = feeStructures.map(f=>`<option value="${f.fee_structure_id}">${esc(f.fee_types?.fee_name)} - ${esc(f.grade_levels?.grade_name)} (${esc(f.academic_years?.year_name)}) - ${fmtMoney(f.amount)} ກີບ</option>`).join('');
+  document.getElementById('inv_feestructure').innerHTML = feeStructures.map(f=>`<option value="${f.fee_structure_id}">${esc(f.fee_types?.fee_name)} (${esc(f.fee_types?.billing_unit||'ຄັ້ງດຽວ')}) - ${esc(f.grade_levels?.grade_name)} (${esc(f.academic_years?.year_name)}) - ${fmtMoney(f.amount)} ກີບ</option>`).join('');
 }
 
 // ---------- FEE TYPES ----------
 function renderFeeTypes(){
   document.getElementById('feeTypeBody').innerHTML = feeTypes.map(f=>`
-    <tr><td>${esc(f.fee_name)}</td><td><button class="btn small secondary" onclick="deleteFeeType(${f.fee_type_id})">✕</button></td></tr>`).join('')
-    || `<tr><td colspan="2" class="empty">ຍັງບໍ່ມີປະເພດຄ່າທຳນຽມ</td></tr>`;
+    <tr><td>${esc(f.fee_name)}</td><td>${esc(f.billing_unit||'ຄັ້ງດຽວ')}</td><td><button class="btn small secondary" onclick="deleteFeeType(${f.fee_type_id})">✕</button></td></tr>`).join('')
+    || `<tr><td colspan="3" class="empty">ຍັງບໍ່ມີປະເພດຄ່າທຳນຽມ</td></tr>`;
 }
 document.getElementById('btnAddFeeType').addEventListener('click', async ()=>{
   const name = document.getElementById('ft_name').value.trim();
+  const unit = document.getElementById('ft_unit').value;
   if(!name){ toast('ກະລຸນາປ້ອນຊື່ປະເພດຄ່າທຳນຽມ'); return; }
-  const {error} = await sb.from('fee_types').insert({fee_name: name});
+  const {error} = await sb.from('fee_types').insert({fee_name: name, billing_unit: unit});
   if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
   document.getElementById('ft_name').value = '';
   toast('ເພີ່ມສຳເລັດ');
@@ -251,11 +258,12 @@ function renderFeeStructures(){
   document.getElementById('feeStructureBody').innerHTML = feeStructures.map(f=>`
     <tr>
       <td>${esc(f.fee_types?.fee_name)}</td>
+      <td>${esc(f.fee_types?.billing_unit||'ຄັ້ງດຽວ')}</td>
       <td>${esc(f.grade_levels?.grade_name)}</td>
       <td>${esc(f.academic_years?.year_name)}</td>
       <td>${fmtMoney(f.amount)} ກີບ</td>
       <td><button class="btn small secondary" onclick="deleteFeeStructure(${f.fee_structure_id})">✕</button></td>
-    </tr>`).join('') || `<tr><td colspan="5" class="empty">ຍັງບໍ່ມີການກຳນົດຄ່າທຳນຽມ</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="6" class="empty">ຍັງບໍ່ມີການກຳນົດຄ່າທຳນຽມ</td></tr>`;
 }
 document.getElementById('btnAddFeeStructure').addEventListener('click', async ()=>{
   const fee_type_id = document.getElementById('fs_type').value;
@@ -304,7 +312,7 @@ document.getElementById('btnBulkInvoice').addEventListener('click', async ()=>{
 // ---------- INVOICE LIST ----------
 async function loadInvoices(){
   const {data, error} = await sb.from('student_invoices')
-    .select('*, students(student_id, student_code, first_name, last_name), fee_structure(amount, fee_types(fee_name), academic_years(year_name))')
+    .select('*, students(student_id, student_code, first_name, last_name), fee_structure(amount, fee_types(fee_name, billing_unit), academic_years(year_name))')
     .order('issued_date', {ascending:false});
   if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
 
@@ -318,7 +326,7 @@ async function loadInvoices(){
   document.getElementById('invoiceBody').innerHTML = rows.map(r=>`
     <tr>
       <td>${esc(r.students?.student_code)} — ${esc(r.students?.first_name)} ${esc(r.students?.last_name)}</td>
-      <td>${esc(r.fee_structure?.fee_types?.fee_name||'-')} (${esc(r.fee_structure?.academic_years?.year_name||'-')})</td>
+      <td>${esc(r.fee_structure?.fee_types?.fee_name||'-')} <span style="color:var(--ink-soft); font-size:12px;">(${esc(r.fee_structure?.fee_types?.billing_unit||'ຄັ້ງດຽວ')})</span> — ${esc(r.fee_structure?.academic_years?.year_name||'-')}</td>
       <td>${fmtMoney(r.amount_due)} ກີບ</td>
       <td>${fmtMoney(r.amount_paid)} ກີບ</td>
       <td><span class="badge ${r.status}">${statusLabel[r.status]||r.status}</span></td>
