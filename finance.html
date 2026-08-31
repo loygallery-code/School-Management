@@ -70,14 +70,10 @@
   .overlay.open{display:flex;}
   .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:480px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
   .modal.wide{max-width:760px;}
-  .print-meta{display:none;}
+  #invoicePrintArea{display:none;}
   @media print{
-    body.print-debt-mode .sidebar, body.print-debt-mode nav.tabs,
-    body.print-debt-mode .page-header, body.print-debt-mode main{display:none !important;}
-    body.print-debt-mode #debtOverlay{display:flex !important; position:static !important; background:none !important; padding:0 !important;}
-    body.print-debt-mode #debtOverlay .modal{box-shadow:none !important; border:none !important; max-width:100% !important;}
-    body.print-debt-mode #debtOverlay .modal-head button, body.print-debt-mode #debtOverlay .modal-foot{display:none !important;}
-    body.print-debt-mode .print-meta{display:block !important; font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+    body.printing-invoice > *:not(#invoicePrintArea){display:none !important;}
+    body.printing-invoice #invoicePrintArea{display:block !important; padding:16px; font-family:'Noto Sans Lao','Noto Sans',sans-serif; color:#000;}
   }
   .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
   .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
@@ -113,13 +109,13 @@
 </header>
 
 <nav class="tabs">
-  <button class="tab-btn active" data-tab="structure">ໂຄງສ້າງຄ່າທຳນຽມ</button>
-  <button class="tab-btn" data-tab="invoices">ໃບແຈ້ງໜີ້ / ຊຳລະ</button>
+  <button class="tab-btn active" data-tab="invoices">ໃບແຈ້ງໜີ້ / ຊຳລະ</button>
+  <button class="tab-btn" data-tab="structure">ໂຄງສ້າງຄ່າທຳນຽມ</button>
 </nav>
 
 <main>
   <!-- ===== FEE STRUCTURE ===== -->
-  <section id="panel-structure" class="panel active">
+  <section id="panel-structure" class="panel">
     <div class="card">
       <div class="section-title">ປະເພດຄ່າທຳນຽມ</div>
       <div class="toolbar">
@@ -157,7 +153,7 @@
   </section>
 
   <!-- ===== INVOICES ===== -->
-  <section id="panel-invoices" class="panel">
+  <section id="panel-invoices" class="panel active">
     <div class="card">
       <div class="section-title">ອອກໃບແຈ້ງໜີ້ລາຍບຸກຄົນ (ເລືອກຫຼາຍລາຍການ/ຫຼາຍເດືອນໄດ້)</div>
       <div class="steps">
@@ -210,7 +206,6 @@
   <div class="modal wide">
     <div class="modal-head"><h2 id="debtModalTitle">ລາຍລະອຽດໜີ້ນັກຮຽນ</h2><button id="closeDebt">&times;</button></div>
     <div class="modal-body">
-      <div class="print-meta" id="debtPrintMeta"></div>
       <div id="debtStudentInfo" style="margin-bottom:14px; font-size:14px;"></div>
       <table>
         <thead><tr><th>ລາຍການ</th><th>ຄ້າງຈ່າຍ</th><th>ຊຳລະແລ້ວ</th><th>ສະຖານະ</th><th></th></tr></thead>
@@ -240,6 +235,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="invoicePrintArea"></div>
 
 <script>
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
@@ -691,14 +687,74 @@ function renderDebtModal(){
 
 document.getElementById('closeDebt').addEventListener('click', ()=>debtOverlay.classList.remove('open'));
 document.getElementById('closeDebt2').addEventListener('click', ()=>debtOverlay.classList.remove('open'));
-document.getElementById('btnPrintDebt').addEventListener('click', ()=>{
-  const today = new Date().toLocaleDateString('lo-LA');
-  document.getElementById('debtPrintMeta').textContent = `ໃບແຈ້ງໜີ້ຄ່າທຳນຽມ — ພິມວັນທີ: ${today}`;
-  document.body.classList.add('print-debt-mode');
+document.getElementById('btnPrintDebt').addEventListener('click', async ()=>{
+  const group = debtGroupsCache[currentDebtStudentId];
+  if(!group) return;
+
+  const currentYear = years.find(y=>y.is_current) || years[0];
+  const {data:enr} = await sb.from('student_enrollments')
+    .select('classrooms(grade_id, room_name)')
+    .eq('student_id', currentDebtStudentId).eq('academic_year_id', currentYear?.academic_year_id).maybeSingle();
+  const gradeName = grades.find(g=>g.grade_id===enr?.classrooms?.grade_id)?.grade_name || '-';
+
+  const totalDue = group.items.reduce((s,i)=>s+Number(i.amount_due),0);
+  const totalPaid = group.items.reduce((s,i)=>s+Number(i.amount_paid),0);
+  const statusLabel = {unpaid:'ຍັງບໍ່ຊຳລະ', partial:'ຊຳລະບາງສ່ວນ', paid:'ຊຳລະຄົບ', waived:'ຍົກເວັ້ນ'};
+
+  const today = new Date();
+  const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  const invoiceNo = `${today.getFullYear()}${String(currentDebtStudentId).padStart(3,'0')}/DPY`;
+
+  const rowsHtml = group.items.map((r,i)=>{
+    const feeName = `${r.fee_structure?.fee_types?.fee_name||'-'} (${r.fee_structure?.fee_types?.billing_unit||'-'}) • ${r.period_label ? r.period_label : (r.fee_structure?.academic_years?.year_name||'-')}`;
+    return `<tr>
+      <td style="border:1px solid #333; padding:5px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #333; padding:5px;">${esc(feeName)}</td>
+      <td style="border:1px solid #333; padding:5px; text-align:right;">${fmtMoney(r.amount_due)}</td>
+      <td style="border:1px solid #333; padding:5px; text-align:right;">${fmtMoney(r.amount_paid)}</td>
+      <td style="border:1px solid #333; padding:5px; text-align:center;">${statusLabel[r.status]||r.status}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('invoicePrintArea').innerHTML = `
+    <div style="text-align:center; margin-bottom:12px;">
+      <div style="font-family:'Noto Serif Lao',serif; font-weight:700; font-size:18px;">ໂຮງຮຽນອະນຸບານ ແລະ ສາມັນສຶກສາ ດວງປັນຍາ</div>
+      <div style="font-size:13px; font-weight:600;">DOUANGPANYA KINDERGARTEN AND GENERAL EDUCATION SCHOOL</div>
+      <div style="font-size:11px; margin-top:4px;">ໂທ: 020 5555xxxx | ອີເມວ: contact@douangpanya.edu.la</div>
+    </div>
+    <div style="text-align:center; font-weight:700; font-size:15px; margin:12px 0; border-top:1px solid #000; border-bottom:1px solid #000; padding:6px 0;">ໃບແຈ້ງໜີ້/ INVOICE</div>
+    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+      <div>ເລກທີ: ${esc(invoiceNo)}</div>
+      <div>ວັນທີອອກບິນ: ${dateStr}</div>
+    </div>
+    <div style="font-size:13px; margin-bottom:2px;">ລະຫັດນັກຮຽນ: ${esc(group.student.student_code)}  ຊື່ ແລະ ນາມສະກຸນ: ${esc(group.student.first_name)} ${esc(group.student.last_name)}</div>
+    <div style="font-size:13px; margin-bottom:10px;">ຊັ້ນຮຽນ: ${esc(gradeName)}  ສົກຮຽນ: ${esc(currentYear?.year_name||'-')}</div>
+    <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead><tr style="background:#eee;">
+        <th style="border:1px solid #333; padding:5px;">ລ/ດ</th>
+        <th style="border:1px solid #333; padding:5px; text-align:left;">ລາຍການຄ່າທຳນຽມ</th>
+        <th style="border:1px solid #333; padding:5px;">ຄ່າຈ່າຍ (ກີບ)</th>
+        <th style="border:1px solid #333; padding:5px;">ຊຳລະແລ້ວ (ກີບ)</th>
+        <th style="border:1px solid #333; padding:5px;">ສະຖານະ</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="margin-top:12px; font-size:13px; font-weight:700; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      <span>ລວມຄ່າຈ່າຍທັງໝົດ: ${fmtMoney(totalDue)} ກີບ</span>
+      <span>ຊຳລະແລ້ວ: ${fmtMoney(totalPaid)} ກີບ</span>
+      <span>ຍັງເຫຼືອຕ້ອງຊຳລະ: ${fmtMoney(totalDue-totalPaid)} ກີບ</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-top:70px; font-size:13px; text-align:center;">
+      <div>ຜູ້ຄິດໄລ່ ບັນຊີ-ການເງິນ<br><br><br>( ລາຍເຊັນ ແລະ ຊື່ແຈ້ງ )</div>
+      <div>ຜູ້ອຳນວຍການ<br><br><br>( ລາຍເຊັນ ແລະ ປະທັບຕາ )</div>
+    </div>
+  `;
+
+  document.body.classList.add('printing-invoice');
   window.print();
 });
 window.addEventListener('afterprint', ()=>{
-  document.body.classList.remove('print-debt-mode');
+  document.body.classList.remove('printing-invoice');
 });
 
 // ---------- PAYMENT ----------
