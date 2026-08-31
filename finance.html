@@ -60,6 +60,10 @@
   tr:last-child td{border-bottom:none;}
   .badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid currentColor;}
   .badge.paid{color:var(--ok);} .badge.partial{color:var(--gold);} .badge.unpaid{color:var(--stamp);} .badge.waived{color:var(--ink-soft);}
+  .fee-item-row{border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px; margin-bottom:8px; background:var(--white);}
+  .fee-item-row label.main{display:flex; align-items:center; gap:10px; font-size:14px; cursor:pointer;}
+  .month-picker{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; padding-left:26px;}
+  .month-picker label{display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:400; color:var(--ink-soft); background:var(--paper-2); padding:4px 8px; border-radius:14px; cursor:pointer;}
   .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
   .row-actions{display:flex; gap:6px;}
   .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
@@ -144,6 +148,21 @@
 
   <!-- ===== INVOICES ===== -->
   <section id="panel-invoices" class="panel">
+    <div class="card">
+      <div class="section-title">ອອກໃບແຈ້ງໜີ້ລາຍບຸກຄົນ (ເລືອກຫຼາຍລາຍການ/ຫຼາຍເດືອນໄດ້)</div>
+      <div class="steps">
+        <div style="flex:2;">
+          <label>ຄົ້ນຫານັກຮຽນ (ລະຫັດ ຫຼື ຊື່)</label>
+          <input type="text" id="indiv_student_search" placeholder="ພິມລະຫັດ ຫຼື ຊື່ນັກຮຽນ..." list="dl_students" autocomplete="off">
+          <datalist id="dl_students"></datalist>
+        </div>
+      </div>
+      <div id="indivStudentInfo" class="progress-text" style="display:none; margin-bottom:10px;"></div>
+      <div id="indivFeeItems"></div>
+      <div id="indivTotal" style="display:none; margin:12px 0; font-weight:700;"></div>
+      <button class="btn stamp" id="btnIndivInvoice" disabled>ອອກໃບແຈ້ງໜີ້</button>
+    </div>
+
     <div class="card">
       <div class="section-title">ອອກໃບແຈ້ງໜີ້ໃຫ້ທັງຫ້ອງ</div>
       <div class="steps">
@@ -276,6 +295,146 @@ function refreshInvFeeStructureOptions(){
 }
 document.getElementById('inv_classroom').addEventListener('change', refreshInvFeeStructureOptions);
 
+// ---------- INDIVIDUAL STUDENT INVOICE (multi-item, multi-month) ----------
+const MONTH_NAMES = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+let allStudentsCache = [];
+let selectedIndivStudent = null;
+
+async function loadStudentsForIndivSearch(){
+  const {data} = await sb.from('students').select('student_id, student_code, first_name, last_name, status').eq('status','active').order('student_code');
+  allStudentsCache = data || [];
+  document.getElementById('dl_students').innerHTML = allStudentsCache.map(s=>`<option value="${esc(s.student_code)} — ${esc(s.first_name)} ${esc(s.last_name)}"></option>`).join('');
+}
+
+document.getElementById('indiv_student_search').addEventListener('input', async (e)=>{
+  const val = e.target.value.trim();
+  const code = val.split(' — ')[0].trim();
+  const student = allStudentsCache.find(s=>s.student_code === code);
+  if(!student){
+    selectedIndivStudent = null;
+    document.getElementById('indivStudentInfo').style.display = 'none';
+    document.getElementById('indivFeeItems').innerHTML = '';
+    document.getElementById('indivTotal').style.display = 'none';
+    document.getElementById('btnIndivInvoice').disabled = true;
+    return;
+  }
+  selectedIndivStudent = student;
+
+  const currentYear = years.find(y=>y.is_current) || years[0];
+  const {data:enr} = await sb.from('student_enrollments')
+    .select('classrooms(grade_id, room_name)')
+    .eq('student_id', student.student_id).eq('academic_year_id', currentYear?.academic_year_id).maybeSingle();
+  const gradeId = enr?.classrooms?.grade_id;
+  const roomName = enr?.classrooms?.room_name;
+  const gradeName = grades.find(g=>g.grade_id===gradeId)?.grade_name;
+
+  document.getElementById('indivStudentInfo').style.display = 'block';
+  document.getElementById('indivStudentInfo').textContent = gradeId
+    ? `${student.student_code} — ${student.first_name} ${student.last_name}  •  ${gradeName} (${roomName})`
+    : `${student.student_code} — ${student.first_name} ${student.last_name}  •  ຍັງບໍ່ໄດ້ລົງທະບຽນເຂົ້າຫ້ອງໃນປີນີ້`;
+
+  const applicable = gradeId ? feeStructures.filter(f=>feeStructureAppliesToGrade(f, gradeId)) : [];
+  renderIndivFeeItems(applicable);
+});
+
+function renderIndivFeeItems(items){
+  const box = document.getElementById('indivFeeItems');
+  if(items.length===0){
+    box.innerHTML = `<div class="empty">ບໍ່ພົບລາຍການຄ່າທຳນຽມສຳລັບຊັ້ນຮຽນຂອງນັກຮຽນຄົນນີ້</div>`;
+    updateIndivTotal();
+    return;
+  }
+  box.innerHTML = items.map(f=>{
+    const unit = f.fee_types?.billing_unit || '';
+    const isMonthly = unit === 'ເດືອນ';
+    const perUnit = f.amount * (f.quantity||1);
+    const monthsHtml = isMonthly ? `<div class="month-picker" style="display:none;">${MONTH_NAMES.map(m=>`<label><input type="checkbox" class="indiv-month" data-fsid="${f.fee_structure_id}" value="${m}" onchange="updateIndivTotal()">${m}</label>`).join('')}</div>` : '';
+    return `<div class="fee-item-row" data-fsid="${f.fee_structure_id}" data-amount="${perUnit}" data-monthly="${isMonthly}">
+      <label class="main">
+        <input type="checkbox" class="indiv-item" data-fsid="${f.fee_structure_id}" onchange="toggleIndivItem(this)">
+        ${esc(f.fee_types?.fee_name)} (${esc(unit)}${isMonthly?'':' × '+(f.quantity||1)}) — ${fmtMoney(perUnit)} ກີບ${isMonthly?'/ເດືອນ':''}
+      </label>
+      ${monthsHtml}
+    </div>`;
+  }).join('');
+  updateIndivTotal();
+}
+
+function toggleIndivItem(cb){
+  const row = cb.closest('.fee-item-row');
+  const monthPicker = row.querySelector('.month-picker');
+  if(monthPicker) monthPicker.style.display = cb.checked ? 'flex' : 'none';
+  if(!cb.checked && monthPicker){
+    monthPicker.querySelectorAll('input[type=checkbox]').forEach(m=>m.checked=false);
+  }
+  updateIndivTotal();
+}
+window.toggleIndivItem = toggleIndivItem;
+
+function updateIndivTotal(){
+  let total = 0, count = 0;
+  document.querySelectorAll('.fee-item-row').forEach(row=>{
+    const checked = row.querySelector('.indiv-item')?.checked;
+    if(!checked) return;
+    const amount = parseFloat(row.dataset.amount);
+    const isMonthly = row.dataset.monthly === 'true';
+    if(isMonthly){
+      const months = row.querySelectorAll('.indiv-month:checked').length;
+      total += amount * months;
+      count += months;
+    } else {
+      total += amount;
+      count += 1;
+    }
+  });
+  const totalBox = document.getElementById('indivTotal');
+  if(count>0){
+    totalBox.style.display = 'block';
+    totalBox.textContent = `ລວມ ${count} ລາຍການ = ${fmtMoney(total)} ກີບ`;
+  } else {
+    totalBox.style.display = 'none';
+  }
+  document.getElementById('btnIndivInvoice').disabled = !(selectedIndivStudent && count>0);
+}
+window.updateIndivTotal = updateIndivTotal;
+
+document.getElementById('btnIndivInvoice').addEventListener('click', async ()=>{
+  if(!selectedIndivStudent) return;
+  const currentYear = years.find(y=>y.is_current) || years[0];
+  const rows = [];
+
+  document.querySelectorAll('.fee-item-row').forEach(row=>{
+    const checked = row.querySelector('.indiv-item')?.checked;
+    if(!checked) return;
+    const fsId = row.dataset.fsid;
+    const amount = parseFloat(row.dataset.amount);
+    const isMonthly = row.dataset.monthly === 'true';
+    if(isMonthly){
+      row.querySelectorAll('.indiv-month:checked').forEach(m=>{
+        rows.push({ student_id: selectedIndivStudent.student_id, fee_structure_id: fsId, amount_due: amount, amount_paid: 0, status: 'unpaid', period_label: `${m.value} ${currentYear?.year_name||''}` });
+      });
+    } else {
+      rows.push({ student_id: selectedIndivStudent.student_id, fee_structure_id: fsId, amount_due: amount, amount_paid: 0, status: 'unpaid', period_label: null });
+    }
+  });
+
+  if(rows.length===0) return;
+  const {error} = await sb.from('student_invoices').insert(rows);
+  if(error){ toast('ອອກໃບແຈ້ງໜີ້ຜິດພາດ: '+error.message); return; }
+
+  const total = rows.reduce((s,r)=>s+r.amount_due, 0);
+  toast(`ອອກໃບແຈ້ງໜີ້ສຳເລັດ ${rows.length} ລາຍການ, ລວມ ${fmtMoney(total)} ກີບ`);
+
+  document.getElementById('indiv_student_search').value = '';
+  document.getElementById('indivStudentInfo').style.display = 'none';
+  document.getElementById('indivFeeItems').innerHTML = '';
+  document.getElementById('indivTotal').style.display = 'none';
+  document.getElementById('btnIndivInvoice').disabled = true;
+  selectedIndivStudent = null;
+  loadInvoices();
+});
+
+
 // ---------- FEE TYPES ----------
 let editingFeeTypeId = null;
 function renderFeeTypes(){
@@ -378,8 +537,10 @@ document.getElementById('btnAddFeeStructure').addEventListener('click', async ()
   loadReferenceData();
 });
 async function deleteFeeStructure(id){
+  if(!confirm('ຢືນຢັນລຶບການກຳນົດຄ່າທຳນຽມນີ້? ໃບແຈ້ງໜີ້ ແລະ ການຊຳລະທີ່ອອກຈາກລາຍການນີ້ຈະຖືກລຶບໄປພ້ອມກັນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້')) return;
   const {error} = await sb.from('fee_structure').delete().eq('fee_structure_id', id);
   if(error){ toast('ລຶບຜິດພາດ: '+error.message); return; }
+  toast('ລຶບສຳເລັດ');
   loadReferenceData();
 }
 window.deleteFeeStructure = deleteFeeStructure;
@@ -426,7 +587,7 @@ async function loadInvoices(){
   document.getElementById('invoiceBody').innerHTML = rows.map(r=>`
     <tr>
       <td>${esc(r.students?.student_code)} — ${esc(r.students?.first_name)} ${esc(r.students?.last_name)}</td>
-      <td>${esc(r.fee_structure?.fee_types?.fee_name||'-')} <span style="color:var(--ink-soft); font-size:12px;">(${esc(r.fee_structure?.fee_types?.billing_unit||'ຄັ້ງດຽວ')})</span> — ${esc(r.fee_structure?.academic_years?.year_name||'-')}</td>
+      <td>${esc(r.fee_structure?.fee_types?.fee_name||'-')} <span style="color:var(--ink-soft); font-size:12px;">(${esc(r.fee_structure?.fee_types?.billing_unit||'ຄັ້ງດຽວ')})</span> ${r.period_label ? `<span style="color:var(--gold); font-size:12px;"> • ${esc(r.period_label)}</span>` : ''} — ${esc(r.fee_structure?.academic_years?.year_name||'-')}</td>
       <td>${fmtMoney(r.amount_due)} ກີບ</td>
       <td>${fmtMoney(r.amount_paid)} ກີບ</td>
       <td><span class="badge ${r.status}">${statusLabel[r.status]||r.status}</span></td>
@@ -473,6 +634,7 @@ document.getElementById('savePayment').addEventListener('click', async ()=>{
 
 loadReferenceData();
 loadInvoices();
+loadStudentsForIndivSearch();
 </script>
 </body>
 </html>
