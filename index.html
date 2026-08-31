@@ -219,12 +219,17 @@
       <div class="empty" data-i18n="chooseFirst">ກະລຸນາເລືອກ ປີ → ຊັ້ນ → ຫ້ອງ ກ່ອນ</div>
     </div>
     <h3 class="enrolled-title" data-i18n="alreadyEnrolled">ນັກຮຽນທີ່ລົງທະບຽນແລ້ວໃນຫ້ອງນີ້</h3>
+    <div class="toolbar">
+      <button class="btn secondary" id="btnUnenrollSelected" data-i18n="unenrollSelected" disabled style="border-color:var(--stamp); color:var(--stamp);">ຍົກເລີກລົງທະບຽນທີ່ເລືອກ</button>
+    </div>
     <table>
       <thead><tr>
+        <th><input type="checkbox" id="selectAllEnrolled"></th>
         <th data-i18n="colCode">ລະຫັດ</th>
         <th data-i18n="colName">ຊື່-ນາມສະກຸນ</th>
         <th data-i18n="colEnrollDate">ວັນທີ່ລົງທະບຽນ</th>
         <th data-i18n="colStatus">ສະຖານະ</th>
+        <th></th>
       </tr></thead>
       <tbody id="enrolledBody"></tbody>
     </table>
@@ -517,11 +522,16 @@ const I18N = {
     photoUnmatched: "ບໍ່ພົບລະຫັດນັກຮຽນນີ້",
     photoUploading: (done,total)=>`ກຳລັງອັບໂຫລດ ${done}/${total} ...`,
     photoUploadDone: (n)=>`ອັບໂຫລດສຳເລັດ ${n} ຮູບ`,
+    photoUploadPartial: (ok,failed)=>`ອັບໂຫລດສຳເລັດ ${ok} ຮູບ, ລົ້ມເຫຼວ ${failed} ຮູບ (ອາດຍ້ອນຍັງບໍ່ໄດ້ຕັ້ງ Storage policy)`,
     deleteSelected: "ລຶບທີ່ເລືອກ",
     confirmDeleteOne: "ຢືນຢັນລຶບນັກຮຽນຄົນນີ້? ຂໍ້ມູນທັງໝົດ (ລົງທະບຽນ, ຄະແນນ, ການເຂົ້າຮຽນ, ໃບແຈ້ງໜີ້) ຈະຖືກລຶບໄປພ້ອມກັນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້",
     confirmDeleteMany: (n)=>`ຢືນຢັນລຶບນັກຮຽນ ${n} ຄົນທີ່ເລືອກ? ຂໍ້ມູນທັງໝົດຈະຖືກລຶບໄປພ້ອມກັນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້`,
     deleteError: "ລຶບຜິດພາດ: ",
-    deleteSuccess: "ລຶບສຳເລັດ"
+    deleteSuccess: "ລຶບສຳເລັດ",
+    unenrollSelected: "ຍົກເລີກລົງທະບຽນທີ່ເລືອກ",
+    confirmUnenrollOne: "ຢືນຢັນຍົກເລີກລົງທະບຽນນັກຮຽນຄົນນີ້ອອກຈາກຫ້ອງນີ້? (ຂໍ້ມູນນັກຮຽນ ແລະ ຄະແນນຍັງຄົງຢູ່, ລຶບແຕ່ການລົງທະບຽນຫ້ອງນີ້ເທົ່ານັ້ນ)",
+    confirmUnenrollMany: (n)=>`ຢືນຢັນຍົກເລີກລົງທະບຽນ ${n} ຄົນທີ່ເລືອກອອກຈາກຫ້ອງນີ້?`,
+    unenrollSuccess: "ຍົກເລີກລົງທະບຽນສຳເລັດ"
   },
   en: {
     pageTitle: "Student Registry | School Management System",
@@ -625,11 +635,16 @@ const I18N = {
     photoUnmatched: "Student code not found",
     photoUploading: (done,total)=>`Uploading ${done}/${total} ...`,
     photoUploadDone: (n)=>`Successfully uploaded ${n} photo(s)`,
+    photoUploadPartial: (ok,failed)=>`Uploaded ${ok} photo(s), ${failed} failed (Storage policy may not be set up yet)`,
     deleteSelected: "Delete Selected",
     confirmDeleteOne: "Delete this student? All related data (enrollment, scores, attendance, invoices) will be deleted too and cannot be recovered",
     confirmDeleteMany: (n)=>`Delete ${n} selected student(s)? All related data will be deleted too and cannot be recovered`,
     deleteError: "Error deleting: ",
-    deleteSuccess: "Deleted successfully"
+    deleteSuccess: "Deleted successfully",
+    unenrollSelected: "Unenroll Selected",
+    confirmUnenrollOne: "Unenroll this student from this classroom? (Student data and scores remain — only this classroom enrollment is removed)",
+    confirmUnenrollMany: (n)=>`Unenroll ${n} selected student(s) from this classroom?`,
+    unenrollSuccess: "Unenrolled successfully"
   }
 };
 let currentLang = 'lo';
@@ -1335,7 +1350,7 @@ document.getElementById('photoBulkInput').addEventListener('change', async (e)=>
 document.getElementById('btnConfirmPhotoImport').addEventListener('click', async ()=>{
   const progress = document.getElementById('photoProgress');
   document.getElementById('btnConfirmPhotoImport').disabled = true;
-  let done = 0;
+  let ok = 0, failed = 0, firstError = '';
 
   for(const {file, student} of matchedPhotoFiles){
     const ext = file.name.split('.').pop();
@@ -1343,14 +1358,21 @@ document.getElementById('btnConfirmPhotoImport').addEventListener('click', async
     const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, file, {upsert:true});
     if(!upErr){
       const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-      await sb.from('students').update({photo_url: pub.publicUrl}).eq('student_id', student.student_id);
+      const {error: updErr} = await sb.from('students').update({photo_url: pub.publicUrl}).eq('student_id', student.student_id);
+      if(!updErr){ ok++; } else { failed++; if(!firstError) firstError = updErr.message; }
+    } else {
+      failed++; if(!firstError) firstError = upErr.message;
     }
-    done++;
-    progress.textContent = t('photoUploading')(done, matchedPhotoFiles.length);
+    progress.textContent = t('photoUploading')(ok+failed, matchedPhotoFiles.length);
   }
 
-  progress.textContent = t('photoUploadDone')(done);
-  toast(t('photoUploadDone')(done));
+  if(failed>0){
+    progress.textContent = t('photoUploadPartial')(ok, failed);
+    toast(t('photoUploadPartial')(ok, failed) + (firstError ? ' — ' + firstError : ''));
+  } else {
+    progress.textContent = t('photoUploadDone')(ok);
+    toast(t('photoUploadDone')(ok));
+  }
   loadStudents();
 });
 
@@ -1369,6 +1391,38 @@ document.getElementById('enrollYear').addEventListener('change', refreshEnrollCl
 document.getElementById('enrollGrade').addEventListener('change', refreshEnrollClassroomOptions);
 document.getElementById('enrollClassroom').addEventListener('change', loadEnrollmentPanel);
 document.getElementById('enrollSearch').addEventListener('input', renderEnrollList);
+
+// ---------- UNENROLL ----------
+document.getElementById('selectAllEnrolled').addEventListener('change', (e)=>{
+  document.querySelectorAll('.enrolled-select').forEach(cb => cb.checked = e.target.checked);
+  updateUnenrollButtonState();
+});
+function updateUnenrollButtonState(){
+  const anyChecked = document.querySelectorAll('.enrolled-select:checked').length > 0;
+  document.getElementById('btnUnenrollSelected').disabled = !anyChecked;
+}
+window.updateUnenrollButtonState = updateUnenrollButtonState;
+
+async function unenrollStudent(enrollmentId){
+  if(!confirm(t('confirmUnenrollOne'))) return;
+  const {error} = await sb.from('student_enrollments').delete().eq('enrollment_id', enrollmentId);
+  if(error){ toast(t('deleteError')+error.message); return; }
+  toast(t('unenrollSuccess'));
+  loadEnrollmentPanel();
+  loadStudents();
+}
+window.unenrollStudent = unenrollStudent;
+
+document.getElementById('btnUnenrollSelected').addEventListener('click', async ()=>{
+  const ids = Array.from(document.querySelectorAll('.enrolled-select:checked')).map(cb=>cb.value);
+  if(ids.length===0) return;
+  if(!confirm(t('confirmUnenrollMany')(ids.length))) return;
+  const {error} = await sb.from('student_enrollments').delete().in('enrollment_id', ids);
+  if(error){ toast(t('deleteError')+error.message); return; }
+  toast(t('unenrollSuccess'));
+  loadEnrollmentPanel();
+  loadStudents();
+});
 
 let allStudentsCache = [];
 let enrollableStudents = [];
@@ -1395,11 +1449,15 @@ async function loadEnrollmentPanel(){
   const enrolledBody = document.getElementById('enrolledBody');
   enrolledBody.innerHTML = (enrolled||[]).map(e=>`
     <tr>
+      <td><input type="checkbox" class="enrolled-select" value="${e.enrollment_id}" onchange="updateUnenrollButtonState()"></td>
       <td>${e.students.student_code}</td>
       <td>${e.students.first_name} ${e.students.last_name}</td>
       <td>${e.enrollment_date || '-'}</td>
       <td><span class="badge active">${I18N[currentLang][statusKeyMap[e.enrollment_status]] || e.enrollment_status}</span></td>
-    </tr>`).join('') || `<tr><td colspan="4" class="empty">${t('noEnrolled')}</td></tr>`;
+      <td><button class="btn small secondary" style="color:var(--stamp); border-color:var(--stamp);" onclick="unenrollStudent(${e.enrollment_id})">✕</button></td>
+    </tr>`).join('') || `<tr><td colspan="6" class="empty">${t('noEnrolled')}</td></tr>`;
+  document.getElementById('selectAllEnrolled').checked = false;
+  updateUnenrollButtonState();
 
   if(allStudentsCache.length===0){
     const {data:allS} = await sb.from('students').select('student_id, student_code, first_name, last_name').eq('status','active').order('student_code');
