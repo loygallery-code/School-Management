@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ລາຍງານສະຖິຕິ | ລະບົບບໍລິຫານໂຮງຮຽນ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{ --paper:#F5F2EA; --paper-2:#EAE3D2; --ink:#16233F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --emerald:#1F6E52; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFFFF; --radius:8px; --sidebar-w:225px; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans Lao','Noto Sans',sans-serif; min-height:100vh;}
+  .app-shell{display:flex; min-height:100vh;}
+  .sidebar{width:var(--sidebar-w); flex-shrink:0; background:linear-gradient(180deg,#16233F 0%,#0E1830 100%); color:var(--paper); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; box-shadow:2px 0 14px rgba(0,0,0,.15); z-index:10;}
+  .sidebar-brand{display:flex; align-items:center; gap:11px; padding:22px 18px; border-bottom:1px solid rgba(255,255,255,.12);}
+  .sidebar-seal{width:40px; height:40px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Noto Serif Lao',serif; font-size:10px; text-align:center; line-height:1.1; color:var(--gold); flex-shrink:0;}
+  .sidebar-brand .brand-text strong{display:block; font-family:'Noto Serif Lao',serif; font-size:14px; font-weight:700; color:#fff;}
+  .sidebar-brand .brand-text span{font-size:11px; color:#93A0BE;}
+  .side-nav{padding:14px 10px; flex:1; display:flex; flex-direction:column; gap:3px;}
+  .side-link{display:flex; align-items:center; gap:11px; padding:12px 13px; color:#B7C0D6; text-decoration:none; font-weight:600; font-size:14px; border-radius:8px; transition:background .15s, color .15s;}
+  .side-link svg{width:18px; height:18px; flex-shrink:0;}
+  .side-link:hover{background:rgba(255,255,255,.07); color:#fff;}
+  .side-link.active{background:rgba(184,145,42,.20); color:#fff;}
+  .side-link.active svg{color:var(--gold);}
+  .sidebar-foot{padding:14px 20px; font-size:10.5px; color:#7B87A6; border-top:1px solid rgba(255,255,255,.1);}
+  .app-main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .page-header{background:var(--white); padding:22px 32px; border-bottom:1px solid var(--line); box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .page-header h1{font-family:'Noto Serif Lao',serif; font-weight:700; font-size:23px; margin:0 0 3px; color:var(--ink);}
+  .page-header p{margin:0; font-size:13px; color:var(--ink-soft);}
+  main{padding:26px 32px 60px; max-width:1150px; width:100%; margin:0 auto;}
+  .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:20px;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  select{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); min-width:200px;}
+
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;}
+  .card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .card .num{font-family:'Noto Serif Lao',serif; font-size:32px; font-weight:700; color:var(--ink); line-height:1.1;}
+  .card .lbl{font-size:12.5px; color:var(--ink-soft); margin-top:6px;}
+  .card.male .num{color:#2C5B8C;}
+  .card.female .num{color:var(--stamp);}
+  .card.total .num{color:var(--emerald);}
+  .card.grades .num{color:var(--gold);}
+
+  .charts-row{display:grid; grid-template-columns:1.4fr 1fr; gap:18px; margin-bottom:24px;}
+  .chart-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .chart-card h3{font-family:'Noto Serif Lao',serif; font-size:15px; margin:0 0 14px;}
+  .chart-wrap{position:relative; height:280px;}
+
+  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
+  td{padding:9px 12px; font-size:14px; border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  tr.totals-row td{font-weight:700; background:var(--paper-2);}
+  .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
+
+  @media(max-width:960px){
+    .cards{grid-template-columns:repeat(2,1fr);}
+    .charts-row{grid-template-columns:1fr;}
+  }
+  @media(max-width:860px){
+    .app-shell{flex-direction:column;}
+    .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
+    .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-link{white-space:nowrap;}
+    .sidebar-foot{display:none;}
+    main{padding:20px 16px 60px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-seal">ຮຮ</div>
+    <div class="brand-text"><strong>ລະບົບບໍລິຫານ</strong><span>ໂຮງຮຽນ</span></div>
+  </div>
+  <nav class="side-nav">
+    <a href="index.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2.5 0 4.5-2 4.5-4.5S14.5 3 12 3 7.5 5 7.5 7.5 9.5 12 12 12z"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>ນັກຮຽນ</a>
+    <a href="staff.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c0-1.7 1.3-3 3-3s3 1.3 3 3"/><path d="M14 9h4M14 13h4"/></svg>ຄູ-ພະນັກງານ</a>
+    <a href="academic.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ວິຊາການ</a>
+    <a href="finance.html" class="side-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 .9 3 2.2c0 2.8-6 1.3-6 4.1 0 1.3 1.3 2.2 3 2.2s3-1.1 3-2.5"/></svg>ການເງິນ</a>
+    <a href="reports.html" class="side-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>ລາຍງານສະຖິຕິ</a>
+  </nav>
+  <div class="sidebar-foot">ພັດທະນາໂດຍ SVKSEZ</div>
+</aside>
+
+<div class="app-main">
+<header class="page-header">
+  <h1>ລາຍງານສະຖິຕິ</h1>
+  <p>ຈຳນວນນັກຮຽນທັງໝົດ, ແບ່ງຕາມຊັ້ນ, ແຍກຍິງ-ຊາຍ</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div><label>ປີການສຶກສາ</label><select id="yearSelect"></select></div>
+  </div>
+
+  <div class="cards">
+    <div class="card total"><div class="num" id="cardTotal">-</div><div class="lbl">ນັກຮຽນທັງໝົດ</div></div>
+    <div class="card male"><div class="num" id="cardMale">-</div><div class="lbl">ນັກຮຽນຊາຍ</div></div>
+    <div class="card female"><div class="num" id="cardFemale">-</div><div class="lbl">ນັກຮຽນຍິງ</div></div>
+    <div class="card grades"><div class="num" id="cardGrades">-</div><div class="lbl">ຈຳນວນຊັ້ນຮຽນທີ່ມີນັກຮຽນ</div></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>ຈຳນວນນັກຮຽນຕາມຊັ້ນ (ແຍກຍິງ-ຊາຍ)</h3>
+      <div class="chart-wrap"><canvas id="gradeBarChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>ອັດຕາສ່ວນຍິງ-ຊາຍ</h3>
+      <div class="chart-wrap"><canvas id="genderPieChart"></canvas></div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>ຊັ້ນຮຽນ</th><th>ຊາຍ</th><th>ຍິງ</th><th>ລວມ</th></tr></thead>
+    <tbody id="gradeTableBody"></tbody>
+  </table>
+  <div id="tableEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີນັກຮຽນລົງທະບຽນໃນປີການສຶກສານີ້</div>
+</main>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let barChart = null, pieChart = null;
+let grades = [];
+
+async function loadYears(){
+  const {data} = await sb.from('academic_years').select('*').order('start_date', {ascending:false});
+  const years = data || [];
+  const sel = document.getElementById('yearSelect');
+  sel.innerHTML = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
+  sel.addEventListener('change', loadStats);
+}
+
+async function loadStats(){
+  const yearId = document.getElementById('yearSelect').value;
+  if(!yearId) return;
+
+  const [{data:g}, {data:enrollments}] = await Promise.all([
+    sb.from('grade_levels').select('*').order('grade_order'),
+    sb.from('student_enrollments').select(`
+      student_id,
+      classrooms ( grade_id ),
+      students ( gender, status )
+    `).eq('academic_year_id', yearId)
+  ]);
+  grades = g || [];
+
+  // Only count active students, and de-duplicate in case of stray double-enrollment in same year
+  const seen = new Set();
+  const rows = (enrollments||[]).filter(e=>{
+    if(!e.students || e.students.status !== 'active') return false;
+    if(seen.has(e.student_id)) return false;
+    seen.add(e.student_id);
+    return true;
+  });
+
+  // per-grade counts
+  const perGrade = {}; // grade_id -> {male, female}
+  let totalMale = 0, totalFemale = 0;
+
+  rows.forEach(r=>{
+    const gradeId = r.classrooms?.grade_id;
+    const gender = r.students?.gender;
+    if(!perGrade[gradeId]) perGrade[gradeId] = {male:0, female:0};
+    if(gender === 'ຊາຍ'){ perGrade[gradeId].male++; totalMale++; }
+    else if(gender === 'ຍິງ'){ perGrade[gradeId].female++; totalFemale++; }
+  });
+
+  const total = totalMale + totalFemale;
+  const gradesWithStudents = Object.keys(perGrade).filter(gid => (perGrade[gid].male + perGrade[gid].female) > 0).length;
+
+  document.getElementById('cardTotal').textContent = total;
+  document.getElementById('cardMale').textContent = totalMale;
+  document.getElementById('cardFemale').textContent = totalFemale;
+  document.getElementById('cardGrades').textContent = gradesWithStudents;
+
+  // table + chart labels in grade order
+  const orderedGrades = grades.filter(gr => perGrade[gr.grade_id]);
+  const labels = orderedGrades.map(gr=>gr.grade_name);
+  const maleData = orderedGrades.map(gr=>perGrade[gr.grade_id].male);
+  const femaleData = orderedGrades.map(gr=>perGrade[gr.grade_id].female);
+
+  const tbody = document.getElementById('gradeTableBody');
+  if(orderedGrades.length === 0){
+    tbody.innerHTML = '';
+    document.getElementById('tableEmpty').style.display = 'block';
+  } else {
+    document.getElementById('tableEmpty').style.display = 'none';
+    tbody.innerHTML = orderedGrades.map(gr=>{
+      const c = perGrade[gr.grade_id];
+      return `<tr><td>${gr.grade_name}</td><td>${c.male}</td><td>${c.female}</td><td>${c.male+c.female}</td></tr>`;
+    }).join('') + `<tr class="totals-row"><td>ລວມທັງໝົດ</td><td>${totalMale}</td><td>${totalFemale}</td><td>${total}</td></tr>`;
+  }
+
+  renderCharts(labels, maleData, femaleData, totalMale, totalFemale);
+}
+
+function renderCharts(labels, maleData, femaleData, totalMale, totalFemale){
+  const barCtx = document.getElementById('gradeBarChart').getContext('2d');
+  if(barChart) barChart.destroy();
+  barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'ຊາຍ', data: maleData, backgroundColor: '#2C5B8C' },
+        { label: 'ຍິງ', data: femaleData, backgroundColor: '#A83232' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+
+  const pieCtx = document.getElementById('genderPieChart').getContext('2d');
+  if(pieChart) pieChart.destroy();
+  pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['ຊາຍ', 'ຍິງ'],
+      datasets: [{ data: [totalMale, totalFemale], backgroundColor: ['#2C5B8C', '#A83232'] }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+(async function init(){
+  await loadYears();
+  await loadStats();
+})();
+</script>
+</body>
+</html>
