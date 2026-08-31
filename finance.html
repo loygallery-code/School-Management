@@ -213,13 +213,14 @@ document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
 let grades=[], years=[], classrooms=[], feeTypes=[], feeStructures=[];
 
 async function loadReferenceData(){
-  const [{data:g},{data:y},{data:c},{data:ft},{data:fs}] = await Promise.all([
+  const [{data:g},{data:y},{data:c},{data:ft},{data:fs, error:fsErr}] = await Promise.all([
     sb.from('grade_levels').select('*').order('grade_order'),
     sb.from('academic_years').select('*').order('start_date',{ascending:false}),
     sb.from('classrooms').select('*'),
     sb.from('fee_types').select('*').order('fee_name'),
-    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), grade_levels(grade_name), grade_start:grade_levels!fee_structure_grade_start_id_fkey(grade_name, grade_order), grade_end:grade_levels!fee_structure_grade_end_id_fkey(grade_name, grade_order), academic_years(year_name)')
+    sb.from('fee_structure').select('*, fee_types(fee_name, billing_unit), grade_levels!fee_structure_grade_id_fkey(grade_name), grade_start:grade_levels!fee_structure_grade_start_id_fkey(grade_name, grade_order), grade_end:grade_levels!fee_structure_grade_end_id_fkey(grade_name, grade_order), academic_years(year_name)')
   ]);
+  if(fsErr) toast('ໂຫຼດການກຳນົດຄ່າທຳນຽມຜິດພາດ: '+fsErr.message);
   grades=g||[]; years=y||[]; classrooms=c||[]; feeTypes=ft||[]; feeStructures=fs||[];
   buildSelects();
   renderFeeTypes();
