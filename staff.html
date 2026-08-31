@@ -145,9 +145,10 @@
       <button class="btn stamp" id="btnAddStaff">+ ເພີ່ມຄູ/ພະນັກງານ</button>
       <button class="btn secondary" id="btnBulkImportStaff">ນຳເຂົ້າ Excel</button>
       <button class="btn secondary" id="btnPrintStaffReport">🖶 ພິມລາຍງານລວມ</button>
+      <button class="btn secondary" id="btnDeleteSelectedStaff" disabled style="border-color:var(--stamp); color:var(--stamp);">ລຶບທີ່ເລືອກ</button>
     </div>
     <table>
-      <thead><tr><th></th><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th>ພະແນກ</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th></th></tr></thead>
+      <thead><tr><th><input type="checkbox" id="selectAllStaff"></th><th></th><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th>ພະແນກ</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th></th></tr></thead>
       <tbody id="staffBody"></tbody>
     </table>
     <div id="staffEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີຂໍ້ມູນຄູ-ພະນັກງານ</div>
@@ -398,6 +399,7 @@ async function loadStaff(){
   const body = document.getElementById('staffBody');
   body.innerHTML = rows.map(s=>`
     <tr>
+      <td><input type="checkbox" class="staff-select" value="${s.staff_id}" onchange="updateDeleteStaffButtonState()"></td>
       <td>${s.photo_url ? `<img class="avatar" src="${s.photo_url}">` : `<div class="avatar"></div>`}</td>
       <td>${esc(s.staff_code)}</td>
       <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
@@ -408,13 +410,46 @@ async function loadStaff(){
       <td class="row-actions">
         <button class="btn small secondary" onclick="openStaffProfile(${s.staff_id})">ປະຫວັດ</button>
         <button class="btn small secondary" onclick="openEditStaff(${s.staff_id})">✎</button>
+        <button class="btn small secondary" style="color:var(--stamp); border-color:var(--stamp);" onclick="deleteStaff(${s.staff_id})">🗑</button>
       </td>
     </tr>`).join('');
   document.getElementById('staffEmpty').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('selectAllStaff').checked = false;
+  updateDeleteStaffButtonState();
   buildSelects();
 }
 document.getElementById('searchInput').addEventListener('input', loadStaff);
 document.getElementById('filterStatus').addEventListener('change', loadStaff);
+
+// ---------- DELETE ----------
+document.getElementById('selectAllStaff').addEventListener('change', (e)=>{
+  document.querySelectorAll('.staff-select').forEach(cb => cb.checked = e.target.checked);
+  updateDeleteStaffButtonState();
+});
+function updateDeleteStaffButtonState(){
+  const anyChecked = document.querySelectorAll('.staff-select:checked').length > 0;
+  document.getElementById('btnDeleteSelectedStaff').disabled = !anyChecked;
+}
+window.updateDeleteStaffButtonState = updateDeleteStaffButtonState;
+
+async function deleteStaff(id){
+  if(!confirm('ຢືນຢັນລຶບຄູ/ພະນັກງານຄົນນີ້? ຖ້າເປັນຄູປະຈຳຫ້ອງ ຫ້ອງນັ້ນຈະຫວ່າງຄູປະຈຳຫ້ອງ, ການມອບໝາຍວິຊາຂອງຄົນນີ້ຈະຖືກລຶບໄປພ້ອມກັນ')) return;
+  const {error} = await sb.from('staff').delete().eq('staff_id', id);
+  if(error){ toast('ລຶບຜິດພາດ: '+error.message); return; }
+  toast('ລຶບສຳເລັດ');
+  loadStaff();
+}
+window.deleteStaff = deleteStaff;
+
+document.getElementById('btnDeleteSelectedStaff').addEventListener('click', async ()=>{
+  const ids = Array.from(document.querySelectorAll('.staff-select:checked')).map(cb=>cb.value);
+  if(ids.length===0) return;
+  if(!confirm(`ຢືນຢັນລຶບຄູ/ພະນັກງານ ${ids.length} ຄົນທີ່ເລືອກ? ຂໍ້ມູນທີ່ພົວພັນ (ຄູປະຈຳຫ້ອງ, ການມອບໝາຍວິຊາ) ຈະຖືກລຶບ/ຫວ່າງໄປພ້ອມກັນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້`)) return;
+  const {error} = await sb.from('staff').delete().in('staff_id', ids);
+  if(error){ toast('ລຶບຜິດພາດ: '+error.message); return; }
+  toast('ລຶບສຳເລັດ');
+  loadStaff();
+});
 
 const overlay = document.getElementById('staffOverlay');
 function computeTenure(hireDateStr){
