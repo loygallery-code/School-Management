@@ -69,6 +69,16 @@
   .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
   .overlay.open{display:flex;}
   .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:480px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal.wide{max-width:760px;}
+  .print-meta{display:none;}
+  @media print{
+    body.print-debt-mode .sidebar, body.print-debt-mode nav.tabs,
+    body.print-debt-mode .page-header, body.print-debt-mode main{display:none !important;}
+    body.print-debt-mode #debtOverlay{display:flex !important; position:static !important; background:none !important; padding:0 !important;}
+    body.print-debt-mode #debtOverlay .modal{box-shadow:none !important; border:none !important; max-width:100% !important;}
+    body.print-debt-mode #debtOverlay .modal-head button, body.print-debt-mode #debtOverlay .modal-foot{display:none !important;}
+    body.print-debt-mode .print-meta{display:block !important; font-size:12px; color:var(--ink-soft); margin-bottom:10px;}
+  }
   .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
   .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
   .modal-head button{background:none;border:none;color:var(--paper); font-size:20px;cursor:pointer;}
@@ -185,7 +195,7 @@
         </select>
       </div>
       <table>
-        <thead><tr><th>ນັກຮຽນ</th><th>ລາຍການ</th><th>ຄ້າງຈ່າຍ</th><th>ຊຳລະແລ້ວ</th><th>ສະຖານະ</th><th></th></tr></thead>
+        <thead><tr><th>ນັກຮຽນ</th><th>ຈຳນວນລາຍການ</th><th>ຍອດຄ້າງລວມ</th><th>ຊຳລະແລ້ວ</th><th>ສະຖານະ</th><th></th></tr></thead>
         <tbody id="invoiceBody"></tbody>
       </table>
       <div id="invoiceEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີໃບແຈ້ງໜີ້</div>
@@ -194,6 +204,27 @@
 </main>
 </div>
 </div>
+
+<!-- ===== STUDENT DEBT DETAIL MODAL ===== -->
+<div class="overlay" id="debtOverlay">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="debtModalTitle">ລາຍລະອຽດໜີ້ນັກຮຽນ</h2><button id="closeDebt">&times;</button></div>
+    <div class="modal-body">
+      <div class="print-meta" id="debtPrintMeta"></div>
+      <div id="debtStudentInfo" style="margin-bottom:14px; font-size:14px;"></div>
+      <table>
+        <thead><tr><th>ລາຍການ</th><th>ຄ້າງຈ່າຍ</th><th>ຊຳລະແລ້ວ</th><th>ສະຖານະ</th><th></th></tr></thead>
+        <tbody id="debtItemsBody"></tbody>
+      </table>
+      <div id="debtTotalRow" style="margin-top:12px; font-weight:700; font-size:15px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="closeDebt2">ປິດ</button>
+      <button class="btn stamp" id="btnPrintDebt">🖶 ພິມໃບແຈ້ງໜີ້</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ===== PAYMENT MODAL ===== -->
 <div class="overlay" id="paymentOverlay">
@@ -570,33 +601,105 @@ document.getElementById('btnBulkInvoice').addEventListener('click', async ()=>{
   loadInvoices();
 });
 
-// ---------- INVOICE LIST ----------
+// ---------- INVOICE LIST (grouped by student) ----------
+let invoiceRowsCache = [];
+let debtGroupsCache = {};
+
+function aggregateStatus(items){
+  if(items.every(i=>i.status==='waived')) return 'waived';
+  const totalDue = items.reduce((s,i)=>s+Number(i.amount_due),0);
+  const totalPaid = items.reduce((s,i)=>s+Number(i.amount_paid),0);
+  if(totalDue>0 && totalPaid >= totalDue) return 'paid';
+  if(totalPaid>0) return 'partial';
+  return 'unpaid';
+}
+
 async function loadInvoices(){
   const {data, error} = await sb.from('student_invoices')
     .select('*, students(student_id, student_code, first_name, last_name), fee_structure(amount, fee_types(fee_name, billing_unit), academic_years(year_name))')
     .order('issued_date', {ascending:false});
   if(error){ toast('ໂຫຼດຂໍ້ມູນຜິດພາດ: '+error.message); return; }
+  invoiceRowsCache = data || [];
+
+  // group by student_id
+  debtGroupsCache = {};
+  invoiceRowsCache.forEach(r=>{
+    const sid = r.students?.student_id;
+    if(!sid) return;
+    if(!debtGroupsCache[sid]) debtGroupsCache[sid] = { student: r.students, items: [] };
+    debtGroupsCache[sid].items.push(r);
+  });
 
   const search = document.getElementById('invSearch').value.trim().toLowerCase();
   const statusFilter = document.getElementById('invStatusFilter').value;
-  let rows = data||[];
-  if(statusFilter) rows = rows.filter(r=>r.status===statusFilter);
-  if(search) rows = rows.filter(r => (r.students?.student_code||'').toLowerCase().includes(search) || ((r.students?.first_name||'')+' '+(r.students?.last_name||'')).toLowerCase().includes(search));
+
+  let groups = Object.values(debtGroupsCache);
+  if(search) groups = groups.filter(g => (g.student.student_code||'').toLowerCase().includes(search) || ((g.student.first_name||'')+' '+(g.student.last_name||'')).toLowerCase().includes(search));
+  if(statusFilter) groups = groups.filter(g => aggregateStatus(g.items) === statusFilter);
 
   const statusLabel = {unpaid:'ຍັງບໍ່ຊຳລະ', partial:'ຊຳລະບາງສ່ວນ', paid:'ຊຳລະຄົບ', waived:'ຍົກເວັ້ນ'};
-  document.getElementById('invoiceBody').innerHTML = rows.map(r=>`
+  document.getElementById('invoiceBody').innerHTML = groups.map(g=>{
+    const totalDue = g.items.reduce((s,i)=>s+Number(i.amount_due),0);
+    const totalPaid = g.items.reduce((s,i)=>s+Number(i.amount_paid),0);
+    const status = aggregateStatus(g.items);
+    return `<tr>
+      <td>${esc(g.student.student_code)} — ${esc(g.student.first_name)} ${esc(g.student.last_name)}</td>
+      <td>${g.items.length} ລາຍການ</td>
+      <td>${fmtMoney(totalDue)} ກີບ</td>
+      <td>${fmtMoney(totalPaid)} ກີບ</td>
+      <td><span class="badge ${status}">${statusLabel[status]||status}</span></td>
+      <td><button class="btn small stamp" onclick="openStudentDebt(${g.student.student_id})">ເບິ່ງຍອດໜີ້</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('invoiceEmpty').style.display = groups.length ? 'none' : 'block';
+}
+document.getElementById('invSearch').addEventListener('input', loadInvoices);
+document.getElementById('invStatusFilter').addEventListener('change', loadInvoices);
+
+// ---------- STUDENT DEBT DETAIL ----------
+const debtOverlay = document.getElementById('debtOverlay');
+let currentDebtStudentId = null;
+
+function openStudentDebt(studentId){
+  currentDebtStudentId = studentId;
+  renderDebtModal();
+  debtOverlay.classList.add('open');
+}
+window.openStudentDebt = openStudentDebt;
+
+function renderDebtModal(){
+  const group = debtGroupsCache[currentDebtStudentId];
+  if(!group) return;
+  const statusLabel = {unpaid:'ຍັງບໍ່ຊຳລະ', partial:'ຊຳລະບາງສ່ວນ', paid:'ຊຳລະຄົບ', waived:'ຍົກເວັ້ນ'};
+
+  document.getElementById('debtStudentInfo').innerHTML =
+    `<strong>${esc(group.student.student_code)} — ${esc(group.student.first_name)} ${esc(group.student.last_name)}</strong>`;
+
+  document.getElementById('debtItemsBody').innerHTML = group.items.map(r=>`
     <tr>
-      <td>${esc(r.students?.student_code)} — ${esc(r.students?.first_name)} ${esc(r.students?.last_name)}</td>
-      <td>${esc(r.fee_structure?.fee_types?.fee_name||'-')} <span style="color:var(--ink-soft); font-size:12px;">(${esc(r.fee_structure?.fee_types?.billing_unit||'ຄັ້ງດຽວ')})</span> ${r.period_label ? `<span style="color:var(--gold); font-size:12px;"> • ${esc(r.period_label)}</span>` : ''} — ${esc(r.fee_structure?.academic_years?.year_name||'-')}</td>
+      <td>${esc(r.fee_structure?.fee_types?.fee_name||'-')} <span style="color:var(--ink-soft); font-size:12px;">(${esc(r.fee_structure?.fee_types?.billing_unit||'ຄັ້ງດຽວ')})</span>${r.period_label ? ` <span style="color:var(--gold); font-size:12px;">• ${esc(r.period_label)}</span>` : ''} — ${esc(r.fee_structure?.academic_years?.year_name||'-')}</td>
       <td>${fmtMoney(r.amount_due)} ກີບ</td>
       <td>${fmtMoney(r.amount_paid)} ກີບ</td>
       <td><span class="badge ${r.status}">${statusLabel[r.status]||r.status}</span></td>
       <td>${r.status!=='paid' ? `<button class="btn small stamp" onclick="openPayment(${r.invoice_id}, ${r.amount_due}, ${r.amount_paid})">ຊຳລະ</button>` : ''}</td>
     </tr>`).join('');
-  document.getElementById('invoiceEmpty').style.display = rows.length ? 'none' : 'block';
+
+  const totalDue = group.items.reduce((s,i)=>s+Number(i.amount_due),0);
+  const totalPaid = group.items.reduce((s,i)=>s+Number(i.amount_paid),0);
+  document.getElementById('debtTotalRow').textContent = `ລວມທັງໝົດ: ຄ້າງຈ່າຍ ${fmtMoney(totalDue)} ກີບ — ຊຳລະແລ້ວ ${fmtMoney(totalPaid)} ກີບ — ຍັງເຫຼືອ ${fmtMoney(totalDue-totalPaid)} ກີບ`;
 }
-document.getElementById('invSearch').addEventListener('input', loadInvoices);
-document.getElementById('invStatusFilter').addEventListener('change', loadInvoices);
+
+document.getElementById('closeDebt').addEventListener('click', ()=>debtOverlay.classList.remove('open'));
+document.getElementById('closeDebt2').addEventListener('click', ()=>debtOverlay.classList.remove('open'));
+document.getElementById('btnPrintDebt').addEventListener('click', ()=>{
+  const today = new Date().toLocaleDateString('lo-LA');
+  document.getElementById('debtPrintMeta').textContent = `ໃບແຈ້ງໜີ້ຄ່າທຳນຽມ — ພິມວັນທີ: ${today}`;
+  document.body.classList.add('print-debt-mode');
+  window.print();
+});
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('print-debt-mode');
+});
 
 // ---------- PAYMENT ----------
 let currentInvoice = null;
@@ -629,8 +732,10 @@ document.getElementById('savePayment').addEventListener('click', async ()=>{
 
   toast('ບັນທຶກການຊຳລະສຳເລັດ');
   paymentOverlay.classList.remove('open');
-  loadInvoices();
+  await loadInvoices();
+  if(debtOverlay.classList.contains('open')) renderDebtModal();
 });
+
 
 loadReferenceData();
 loadInvoices();
