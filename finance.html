@@ -215,6 +215,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn secondary" id="closeDebt2">ປິດ</button>
+      <button class="btn secondary" id="btnPrintReceipt" style="border-color:var(--emerald); color:var(--emerald);">🧾 ພິມໃບຮັບເງິນ</button>
       <button class="btn stamp" id="btnPrintDebt">🖶 ພິມໃບແຈ້ງໜີ້</button>
     </div>
   </div>
@@ -687,62 +688,123 @@ function renderDebtModal(){
 
 document.getElementById('closeDebt').addEventListener('click', ()=>debtOverlay.classList.remove('open'));
 document.getElementById('closeDebt2').addEventListener('click', ()=>debtOverlay.classList.remove('open'));
-document.getElementById('btnPrintDebt').addEventListener('click', async ()=>{
-  const group = debtGroupsCache[currentDebtStudentId];
-  if(!group) return;
 
+// ---------- NUMBER TO WORDS ----------
+const LAO_DIGITS = ['','ໜຶ່ງ','ສອງ','ສາມ','ສີ່','ຫ້າ','ຫົກ','ເຈັດ','ແປດ','ເກົ້າ'];
+const LAO_PLACES = ['','ສິບ','ຮ້ອຍ','ພັນ','ໝື່ນ','ແສນ'];
+function laoReadSixDigit(numStr){
+  let result = '';
+  const len = numStr.length;
+  for(let i=0;i<len;i++){
+    const digit = parseInt(numStr[i]);
+    const place = len - i - 1;
+    if(digit===0) continue;
+    if(place===0){ result += (digit===1 && len>1) ? 'ເອັດ' : LAO_DIGITS[digit]; }
+    else if(place===1){ result += (digit===1) ? 'ສິບ' : (digit===2 ? 'ຊາວ' : LAO_DIGITS[digit]+'ສິບ'); }
+    else { result += LAO_DIGITS[digit] + LAO_PLACES[place]; }
+  }
+  return result;
+}
+function numberToLaoWords(n){
+  n = Math.round(n);
+  if(n===0) return 'ສູນກີບຖ້ວນ';
+  const millions = Math.floor(n/1000000);
+  const remainder = n % 1000000;
+  let words = '';
+  if(millions>0) words += laoReadSixDigit(String(millions)) + 'ລ້ານ';
+  if(remainder>0) words += laoReadSixDigit(String(remainder));
+  return words + 'ກີບຖ້ວນ';
+}
+
+const EN_ONES = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+const EN_TENS = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+function numberToEnglishWords(n){
+  n = Math.round(n);
+  if(n===0) return 'Zero';
+  function threeDigits(num){
+    let s='';
+    if(num>=100){ s += EN_ONES[Math.floor(num/100)]+' Hundred '; num = num%100; }
+    if(num>=20){ s += EN_TENS[Math.floor(num/10)]+' '; num = num%10; if(num>0) s += EN_ONES[num]+' '; }
+    else if(num>0){ s += EN_ONES[num]+' '; }
+    return s.trim();
+  }
+  const units = ['','Thousand','Million','Billion'];
+  let parts = [], i = 0;
+  while(n>0){
+    const chunk = n%1000;
+    if(chunk>0) parts.unshift(threeDigits(chunk) + (units[i]?' '+units[i]:''));
+    n = Math.floor(n/1000);
+    i++;
+  }
+  return parts.join(' ').trim();
+}
+
+// ---------- SHARED PRINT HELPERS ----------
+function printLetterhead(titleLao, titleColor){
+  return `
+    <div style="background:var(--ink); color:#fff; padding:16px 20px; border-radius:8px 8px 0 0; text-align:center;">
+      <div style="font-family:'Noto Serif Lao',serif; font-weight:700; font-size:19px;">ໂຮງຮຽນອະນຸບານ ແລະ ສາມັນສຶກສາ ດວງປັນຍາ</div>
+      <div style="font-size:13px; font-weight:600; color:#C9CEDC;">DOUANGPANYA KINDERGARTEN AND GENERAL EDUCATION SCHOOL</div>
+      <div style="font-size:11px; margin-top:4px; color:#93A0BE;">ໂທ: 020 5555xxxx | ອີເມວ: contact@douangpanya.edu.la</div>
+    </div>
+    <div style="text-align:center; font-weight:700; font-size:16px; margin:0 0 14px; padding:8px 0; background:${titleColor}; color:#fff; border-radius:0 0 8px 8px; letter-spacing:.5px;">${titleLao}</div>
+  `;
+}
+async function getPrintContext(){
+  const group = debtGroupsCache[currentDebtStudentId];
   const currentYear = years.find(y=>y.is_current) || years[0];
   const {data:enr} = await sb.from('student_enrollments')
     .select('classrooms(grade_id, room_name)')
     .eq('student_id', currentDebtStudentId).eq('academic_year_id', currentYear?.academic_year_id).maybeSingle();
   const gradeName = grades.find(g=>g.grade_id===enr?.classrooms?.grade_id)?.grade_name || '-';
+  const today = new Date();
+  const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  const docNo = `${today.getFullYear()}${String(currentDebtStudentId).padStart(3,'0')}`;
+  return {group, currentYear, gradeName, dateStr, docNo};
+}
+
+// ---------- PRINT INVOICE ----------
+document.getElementById('btnPrintDebt').addEventListener('click', async ()=>{
+  const {group, currentYear, gradeName, dateStr, docNo} = await getPrintContext();
+  if(!group) return;
 
   const totalDue = group.items.reduce((s,i)=>s+Number(i.amount_due),0);
   const totalPaid = group.items.reduce((s,i)=>s+Number(i.amount_paid),0);
   const statusLabel = {unpaid:'ຍັງບໍ່ຊຳລະ', partial:'ຊຳລະບາງສ່ວນ', paid:'ຊຳລະຄົບ', waived:'ຍົກເວັ້ນ'};
 
-  const today = new Date();
-  const dateStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
-  const invoiceNo = `${today.getFullYear()}${String(currentDebtStudentId).padStart(3,'0')}/DPY`;
-
   const rowsHtml = group.items.map((r,i)=>{
     const feeName = `${r.fee_structure?.fee_types?.fee_name||'-'} (${r.fee_structure?.fee_types?.billing_unit||'-'}) • ${r.period_label ? r.period_label : (r.fee_structure?.academic_years?.year_name||'-')}`;
-    return `<tr>
-      <td style="border:1px solid #333; padding:5px; text-align:center;">${i+1}</td>
-      <td style="border:1px solid #333; padding:5px;">${esc(feeName)}</td>
-      <td style="border:1px solid #333; padding:5px; text-align:right;">${fmtMoney(r.amount_due)}</td>
-      <td style="border:1px solid #333; padding:5px; text-align:right;">${fmtMoney(r.amount_paid)}</td>
-      <td style="border:1px solid #333; padding:5px; text-align:center;">${statusLabel[r.status]||r.status}</td>
+    return `<tr style="${i%2? 'background:#F7F3EA;':''}">
+      <td style="border:1px solid #ccc; padding:5px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(feeName)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:right;">${fmtMoney(r.amount_due)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:right;">${fmtMoney(r.amount_paid)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:center;">${statusLabel[r.status]||r.status}</td>
     </tr>`;
   }).join('');
 
   document.getElementById('invoicePrintArea').innerHTML = `
-    <div style="text-align:center; margin-bottom:12px;">
-      <div style="font-family:'Noto Serif Lao',serif; font-weight:700; font-size:18px;">ໂຮງຮຽນອະນຸບານ ແລະ ສາມັນສຶກສາ ດວງປັນຍາ</div>
-      <div style="font-size:13px; font-weight:600;">DOUANGPANYA KINDERGARTEN AND GENERAL EDUCATION SCHOOL</div>
-      <div style="font-size:11px; margin-top:4px;">ໂທ: 020 5555xxxx | ອີເມວ: contact@douangpanya.edu.la</div>
-    </div>
-    <div style="text-align:center; font-weight:700; font-size:15px; margin:12px 0; border-top:1px solid #000; border-bottom:1px solid #000; padding:6px 0;">ໃບແຈ້ງໜີ້/ INVOICE</div>
+    ${printLetterhead('ໃບແຈ້ງໜີ້/ INVOICE', 'var(--stamp)')}
     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
-      <div>ເລກທີ: ${esc(invoiceNo)}</div>
+      <div>ເລກທີ: ${esc(docNo)}/DPY</div>
       <div>ວັນທີອອກບິນ: ${dateStr}</div>
     </div>
     <div style="font-size:13px; margin-bottom:2px;">ລະຫັດນັກຮຽນ: ${esc(group.student.student_code)}  ຊື່ ແລະ ນາມສະກຸນ: ${esc(group.student.first_name)} ${esc(group.student.last_name)}</div>
     <div style="font-size:13px; margin-bottom:10px;">ຊັ້ນຮຽນ: ${esc(gradeName)}  ສົກຮຽນ: ${esc(currentYear?.year_name||'-')}</div>
     <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
-      <thead><tr style="background:#eee;">
-        <th style="border:1px solid #333; padding:5px;">ລ/ດ</th>
-        <th style="border:1px solid #333; padding:5px; text-align:left;">ລາຍການຄ່າທຳນຽມ</th>
-        <th style="border:1px solid #333; padding:5px;">ຄ່າຈ່າຍ (ກີບ)</th>
-        <th style="border:1px solid #333; padding:5px;">ຊຳລະແລ້ວ (ກີບ)</th>
-        <th style="border:1px solid #333; padding:5px;">ສະຖານະ</th>
+      <thead><tr style="background:var(--ink); color:#fff;">
+        <th style="border:1px solid #ccc; padding:6px;">ລ/ດ</th>
+        <th style="border:1px solid #ccc; padding:6px; text-align:left;">ລາຍການຄ່າທຳນຽມ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ຄ່າຈ່າຍ (ກີບ)</th>
+        <th style="border:1px solid #ccc; padding:6px;">ຊຳລະແລ້ວ (ກີບ)</th>
+        <th style="border:1px solid #ccc; padding:6px;">ສະຖານະ</th>
       </tr></thead>
       <tbody>${rowsHtml}</tbody>
     </table>
-    <div style="margin-top:12px; font-size:13px; font-weight:700; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <div style="margin-top:12px; font-size:13px; font-weight:700; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; background:#F6ECD2; border:1px solid var(--gold); border-radius:6px; padding:10px 14px;">
       <span>ລວມຄ່າຈ່າຍທັງໝົດ: ${fmtMoney(totalDue)} ກີບ</span>
       <span>ຊຳລະແລ້ວ: ${fmtMoney(totalPaid)} ກີບ</span>
-      <span>ຍັງເຫຼືອຕ້ອງຊຳລະ: ${fmtMoney(totalDue-totalPaid)} ກີບ</span>
+      <span style="color:var(--stamp);">ຍັງເຫຼືອຕ້ອງຊຳລະ: ${fmtMoney(totalDue-totalPaid)} ກີບ</span>
     </div>
     <div style="display:flex; justify-content:space-between; margin-top:70px; font-size:13px; text-align:center;">
       <div>ຜູ້ຄິດໄລ່ ບັນຊີ-ການເງິນ<br><br><br>( ລາຍເຊັນ ແລະ ຊື່ແຈ້ງ )</div>
@@ -753,6 +815,66 @@ document.getElementById('btnPrintDebt').addEventListener('click', async ()=>{
   document.body.classList.add('printing-invoice');
   window.print();
 });
+
+// ---------- PRINT RECEIPT ----------
+document.getElementById('btnPrintReceipt').addEventListener('click', async ()=>{
+  const {group, currentYear, gradeName, dateStr, docNo} = await getPrintContext();
+  if(!group) return;
+
+  const paidItems = group.items.filter(r=>Number(r.amount_paid)>0);
+  if(paidItems.length===0){ toast('ນັກຮຽນຄົນນີ້ຍັງບໍ່ມີການຊຳລະ ບໍ່ສາມາດພິມໃບຮັບເງິນໄດ້'); return; }
+
+  const totalPaid = paidItems.reduce((s,i)=>s+Number(i.amount_paid),0);
+  const statusLabel = {unpaid:'ຍັງບໍ່ຊຳລະ', partial:'ຊຳລະບາງສ່ວນ', paid:'ຊຳລະແລ້ວ', waived:'ຍົກເວັ້ນ'};
+
+  const rowsHtml = paidItems.map((r,i)=>{
+    const feeName = `${r.fee_structure?.fee_types?.fee_name||'-'} (${r.fee_structure?.fee_types?.billing_unit||'-'}) • ${r.period_label ? r.period_label : (r.fee_structure?.academic_years?.year_name||'-')}`;
+    return `<tr style="${i%2? 'background:#EAF3EE;':''}">
+      <td style="border:1px solid #ccc; padding:5px; text-align:center;">${i+1}</td>
+      <td style="border:1px solid #ccc; padding:5px;">${esc(feeName)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:right;">${fmtMoney(r.amount_due)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:right;">${fmtMoney(r.amount_paid)}</td>
+      <td style="border:1px solid #ccc; padding:5px; text-align:center;">${statusLabel[r.status]||r.status}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('invoicePrintArea').innerHTML = `
+    ${printLetterhead('ໃບຮັບເງິນ / RECEIPT', 'var(--emerald)')}
+    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+      <div>ເລກທີ: ${esc(docNo)}/REC-DPY</div>
+      <div>ວັນທີຮັບເງິນ: ${dateStr}</div>
+    </div>
+    <div style="font-size:13px; margin-bottom:6px; color:var(--ink-soft);">ອ້າງອີງໃບແຈ້ງໜີ້: ${esc(docNo)}/DPY</div>
+    <div style="font-size:13px; margin-bottom:2px;">ລະຫັດນັກຮຽນ: ${esc(group.student.student_code)}  ຊື່ ແລະ ນາມສະກຸນ: ${esc(group.student.first_name)} ${esc(group.student.last_name)}</div>
+    <div style="font-size:13px; margin-bottom:10px;">ຊັ້ນຮຽນ: ${esc(gradeName)}  ສົກຮຽນ: ${esc(currentYear?.year_name||'-')}</div>
+    <div style="font-size:13px; margin-bottom:12px;">ຮູບແບບການຊຳລະ: ☐ ເງິນສົດ (Cash) &nbsp;&nbsp; ☐ ໂອນຜ່ານທະນາຄານ (Bank Transfer / BCEL One) &nbsp;&nbsp; ເລກອ້າງອີງ/Transaction ID: ..........................</div>
+    <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead><tr style="background:var(--emerald); color:#fff;">
+        <th style="border:1px solid #ccc; padding:6px;">ລ/ດ</th>
+        <th style="border:1px solid #ccc; padding:6px; text-align:left;">ລາຍການທີ່ຊຳລະ</th>
+        <th style="border:1px solid #ccc; padding:6px;">ຈຳນວນເງິນ (ກີບ)</th>
+        <th style="border:1px solid #ccc; padding:6px;">ຊຳລະຕົວຈິງ (ກີບ)</th>
+        <th style="border:1px solid #ccc; padding:6px;">ສະຖານະ</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="margin-top:12px; font-size:13px; font-weight:700; background:#E4F2E9; border:1px solid var(--emerald); border-radius:6px; padding:10px 14px;">
+      ຈຳນວນເງິນທີ່ໄດ້ຮັບຕົວຈິງ: ${fmtMoney(totalPaid)} ກີບ
+    </div>
+    <div style="margin-top:8px; font-size:12.5px; font-style:italic; color:var(--ink-soft);">
+      ຈຳນວນເງິນເປັນຕົວໜັງສື: ${numberToLaoWords(totalPaid)} (${numberToEnglishWords(totalPaid)} Kip Only)
+    </div>
+    <div style="display:flex; justify-content:space-between; margin-top:60px; font-size:12.5px; text-align:center;">
+      <div>ຜູ້ມອບເງິນ / ຜູ້ປົກຄອງ<br><br><br>( ລາຍເຊັນ ແລະ ຊື່ແຈ້ງ )</div>
+      <div>ຜູ້ຮັບເງິນ / ການເງິນ<br><br><br>( ລາຍເຊັນ ແລະ ຊື່ແຈ້ງ )</div>
+      <div>ຜູ້ອຳນວຍການ<br><br><br>( ລາຍເຊັນ ແລະ ປະທັບຕາ )</div>
+    </div>
+  `;
+
+  document.body.classList.add('printing-invoice');
+  window.print();
+});
+
 window.addEventListener('afterprint', ()=>{
   document.body.classList.remove('printing-invoice');
 });
