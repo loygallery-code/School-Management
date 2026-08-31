@@ -49,6 +49,14 @@
   nav.tabs button{font-family:'Noto Sans Lao',sans-serif; font-size:14px; font-weight:600; padding:14px 20px; background:transparent; border:none; cursor:pointer; color:var(--ink-soft); border-bottom:3px solid transparent; position:relative; top:1px;}
   nav.tabs button.active{color:var(--ink); border-bottom:3px solid var(--stamp);}
   main{padding:26px 32px 60px; max-width:1150px; width:100%; margin:0 auto;}
+  .print-meta{display:none;}
+  @media print{
+    .sidebar, nav.tabs, .toolbar, .btn, .row-actions, th:first-child, td:first-child, th:last-child, td:last-child{display:none !important;}
+    .app-shell{display:block;}
+    .page-header{box-shadow:none; border-bottom:2px solid var(--ink);}
+    main{padding:10px 0; max-width:100%;}
+    .print-meta{display:block; font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
+  }
   .panel{display:none;}
   .panel.active{display:block;}
   @media(max-width:860px){
@@ -173,6 +181,7 @@
 
   <!-- ===== STUDENTS PANEL ===== -->
   <section id="panel-students" class="panel active">
+    <div class="print-meta" id="printMeta"></div>
     <div class="toolbar">
       <input type="text" id="searchInput" data-i18n-ph="searchPh" placeholder="ຄົ້ນຫາຊື່ (ລາວ/ອັງກິດ) ຫຼື ລະຫັດນັກຮຽນ...">
       <select id="filterGrade"><option value="" data-i18n="allGrades">ທຸກຊັ້ນ</option></select>
@@ -186,6 +195,7 @@
       <button class="btn stamp" id="btnAddStudent" data-i18n="addStudent">+ ເພີ່ມນັກຮຽນ</button>
       <button class="btn secondary" id="btnBulkImport" data-i18n="bulkImport">ນຳເຂົ້າ Excel/ຮູບ</button>
       <button class="btn secondary" id="btnDeleteSelected" data-i18n="deleteSelected" disabled style="border-color:var(--stamp); color:var(--stamp);">ລຶບທີ່ເລືອກ</button>
+      <button class="btn secondary" id="btnPrintList">🖶 ພິມລາຍຊື່</button>
     </div>
     <table>
       <thead>
@@ -1503,9 +1513,25 @@ document.getElementById('btnEnrollSelected').addEventListener('click', async ()=
 (async function init(){
   applyStaticI18n();
   await loadReferenceData();
+
+  // Apply grade filter from URL (e.g. linked from the Reports page)
+  const params = new URLSearchParams(window.location.search);
+  const gradeParam = params.get('grade');
+  if(gradeParam){
+    document.getElementById('filterGrade').value = gradeParam;
+  }
+
   await loadStudents();
   loadAutocompleteData();
 })();
+
+document.getElementById('btnPrintList').addEventListener('click', ()=>{
+  const gradeSel = document.getElementById('filterGrade');
+  const gradeName = gradeSel.options[gradeSel.selectedIndex]?.textContent || t('allGrades');
+  const today = new Date().toLocaleDateString('lo-LA');
+  document.getElementById('printMeta').textContent = `ຊັ້ນຮຽນ: ${gradeName}  •  ພິມວັນທີ: ${today}`;
+  window.print();
+});
 </script>
 </body>
 </html>
