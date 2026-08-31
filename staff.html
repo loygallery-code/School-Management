@@ -67,6 +67,8 @@
   .modal-body{padding:20px 22px;}
   .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;}
   .form-grid .full{grid-column:1/-1;}
+  .photo-box{width:100px;height:120px; border:1.5px dashed var(--gold); border-radius:4px; display:flex;align-items:center;justify-content:center; background:var(--white); overflow:hidden; cursor:pointer; font-size:11px; color:var(--gold); text-align:center; margin-bottom:12px;}
+  .photo-box img{width:100%;height:100%;object-fit:cover;}
   label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
   input, select{width:100%; font-family:inherit; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
   .modal-foot{padding:16px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--line);}
@@ -82,6 +84,11 @@
   .row-ok{color:var(--ok);}
   .row-bad{color:var(--stamp);}
   .progress-text{font-size:13px; color:var(--ink-soft); margin-top:8px;}
+  .bulk-tabs{display:flex; gap:8px; margin-bottom:16px;}
+  .bulk-tabs button{flex:1; padding:10px; border:1px solid var(--line); background:var(--white); border-radius:var(--radius); cursor:pointer; font-family:'Noto Sans Lao',sans-serif; font-weight:600; font-size:13px; color:var(--ink-soft);}
+  .bulk-tabs button.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .bulk-panel{display:none;}
+  .bulk-panel.active{display:block;}
   @media(max-width:640px){ .form-grid{grid-template-columns:1fr;} main{padding:20px 16px 60px;} nav.tabs{padding:0 16px; overflow-x:auto;} }
 </style>
 </head>
@@ -171,6 +178,8 @@
   <div class="modal">
     <div class="modal-head"><h2 id="modalTitle">ເພີ່ມຄູ/ພະນັກງານ</h2><button id="closeModal">&times;</button></div>
     <div class="modal-body">
+      <div class="photo-box" id="photoBox" onclick="document.getElementById('photoInput').click()">ຮູບ 3×4</div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none;">
       <div class="form-grid">
         <div><label>ລະຫັດ *</label><input type="text" id="f_code"></div>
         <div><label>ຕຳແໜ່ງ</label><input type="text" id="f_position" placeholder="ຄູສອນ / ຜູ້ອຳນວຍການ"></div>
@@ -191,23 +200,46 @@
 <!-- ===== BULK IMPORT MODAL ===== -->
 <div class="overlay" id="bulkOverlay">
   <div class="modal">
-    <div class="modal-head"><h2>ນຳເຂົ້າຄູ-ພະນັກງານຈາກ Excel</h2><button id="closeBulk">&times;</button></div>
+    <div class="modal-head"><h2>ນຳເຂົ້າຄູ-ພະນັກງານ</h2><button id="closeBulk">&times;</button></div>
     <div class="modal-body">
-      <button class="btn small secondary" id="btnDownloadStaffTemplate" type="button" style="margin-bottom:14px;">ດາວໂຫລດແບບຟອມ</button>
-      <div class="drop-zone" onclick="document.getElementById('staffExcelInput').click()">
-        ກົດເພື່ອເລືອກໄຟລ໌ Excel (.xlsx) ທີ່ຕື່ມຂໍ້ມູນຄູ-ພະນັກງານແລ້ວ
+      <div class="bulk-tabs">
+        <button class="bulk-tab-btn active" data-bulk="excel">ນຳເຂົ້າຈາກ Excel</button>
+        <button class="bulk-tab-btn" data-bulk="photo">ອັບໂຫລດຮູບຫຼາຍຮູບ</button>
       </div>
-      <input type="file" id="staffExcelInput" accept=".xlsx,.xls" style="display:none;">
-      <div class="preview-wrap" id="staffExcelPreview" style="display:none;">
-        <table><thead><tr>
-          <th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th></th>
-        </tr></thead><tbody id="staffExcelPreviewBody"></tbody></table>
+
+      <div class="bulk-panel active" id="bulk-excel">
+        <button class="btn small secondary" id="btnDownloadStaffTemplate" type="button" style="margin-bottom:14px;">ດາວໂຫລດແບບຟອມ</button>
+        <div class="drop-zone" onclick="document.getElementById('staffExcelInput').click()">
+          ກົດເພື່ອເລືອກໄຟລ໌ Excel (.xlsx) ທີ່ຕື່ມຂໍ້ມູນຄູ-ພະນັກງານແລ້ວ
+        </div>
+        <input type="file" id="staffExcelInput" accept=".xlsx,.xls" style="display:none;">
+        <div class="preview-wrap" id="staffExcelPreview" style="display:none;">
+          <table><thead><tr>
+            <th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th></th>
+          </tr></thead><tbody id="staffExcelPreviewBody"></tbody></table>
+        </div>
+        <div class="progress-text" id="staffExcelProgress"></div>
+        <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
+          <button class="btn stamp" id="btnConfirmStaffImport" disabled>ນຳເຂົ້າ</button>
+        </div>
       </div>
-      <div class="progress-text" id="staffExcelProgress"></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn secondary" id="cancelBulkStaff">ຍົກເລີກ</button>
-      <button class="btn stamp" id="btnConfirmStaffImport" disabled>ນຳເຂົ້າ</button>
+
+      <div class="bulk-panel" id="bulk-photo">
+        <p class="progress-text">ຊື່ໄຟລ໌ຮູບຕ້ອງກົງກັບ "ລະຫັດພະນັກງານ" (ເຊັ່ນ DPY-STF-001.jpg) ຈຶ່ງຈະຈັບຄູ່ອັດຕະໂນມັດ</p>
+        <div class="drop-zone" onclick="document.getElementById('staffPhotoBulkInput').click()">
+          ກົດເພື່ອເລືອກຮູບຫຼາຍຮູບພ້ອມກັນ
+        </div>
+        <input type="file" id="staffPhotoBulkInput" accept="image/*" multiple style="display:none;">
+        <div class="preview-wrap" id="staffPhotoPreview" style="display:none;">
+          <table><thead><tr>
+            <th>ຊື່ໄຟລ໌ / ລະຫັດ</th><th>ຊື່</th><th></th>
+          </tr></thead><tbody id="staffPhotoPreviewBody"></tbody></table>
+        </div>
+        <div class="progress-text" id="staffPhotoProgress"></div>
+        <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
+          <button class="btn stamp" id="btnConfirmStaffPhotoImport" disabled>ອັບໂຫລດ</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -218,6 +250,8 @@
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PHOTO_BUCKET = "staff-photos";
+let selectedPhotoFile = null;
 
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -300,7 +334,7 @@ async function loadStaff(){
   const body = document.getElementById('staffBody');
   body.innerHTML = rows.map(s=>`
     <tr>
-      <td><div class="avatar"></div></td>
+      <td>${s.photo_url ? `<img class="avatar" src="${s.photo_url}">` : `<div class="avatar"></div>`}</td>
       <td>${esc(s.staff_code)}</td>
       <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
       <td>${esc(s.position||'-')}</td>
@@ -318,7 +352,9 @@ document.getElementById('filterStatus').addEventListener('change', loadStaff);
 const overlay = document.getElementById('staffOverlay');
 function resetForm(){
   editingStaffId = null;
+  selectedPhotoFile = null;
   document.getElementById('modalTitle').textContent = 'ເພີ່ມຄູ/ພະນັກງານ';
+  document.getElementById('photoBox').textContent = 'ຮູບ 3×4';
   ['f_code','f_position','f_first','f_last','f_dob','f_phone','f_department','f_hire'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f_gender').value='';
   document.getElementById('f_status').value='active';
@@ -326,6 +362,15 @@ function resetForm(){
 document.getElementById('btnAddStaff').addEventListener('click', ()=>{ resetForm(); overlay.classList.add('open'); });
 document.getElementById('closeModal').addEventListener('click', ()=>overlay.classList.remove('open'));
 document.getElementById('cancelModal').addEventListener('click', ()=>overlay.classList.remove('open'));
+
+document.getElementById('photoInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  selectedPhotoFile = file;
+  const reader = new FileReader();
+  reader.onload = ()=> { document.getElementById('photoBox').innerHTML = `<img src="${reader.result}">`; };
+  reader.readAsDataURL(file);
+});
 
 async function openEditStaff(id){
   const {data:s, error} = await sb.from('staff').select('*').eq('staff_id', id).single();
@@ -343,6 +388,7 @@ async function openEditStaff(id){
   document.getElementById('f_department').value = s.department||'';
   document.getElementById('f_hire').value = s.hire_date||'';
   document.getElementById('f_status').value = s.status||'active';
+  if(s.photo_url){ document.getElementById('photoBox').innerHTML = `<img src="${s.photo_url}">`; }
   overlay.classList.add('open');
 }
 window.openEditStaff = openEditStaff;
@@ -352,6 +398,19 @@ document.getElementById('saveStaff').addEventListener('click', async ()=>{
   const first = document.getElementById('f_first').value.trim();
   const last = document.getElementById('f_last').value.trim();
   if(!code || !first || !last){ toast('ກະລຸນາປ້ອນ ລະຫັດ, ຊື່, ນາມສະກຸນ'); return; }
+
+  let photo_url = undefined;
+  if(selectedPhotoFile){
+    const ext = selectedPhotoFile.name.split('.').pop();
+    const path = `${code}-${Date.now()}.${ext}`;
+    const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, selectedPhotoFile, {upsert:true});
+    if(upErr){ toast('ອັບໂຫລດຮູບຜິດພາດ: '+upErr.message); }
+    else {
+      const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+      photo_url = pub.publicUrl;
+    }
+  }
+
   const payload = {
     staff_code: code, first_name: first, last_name: last,
     gender: document.getElementById('f_gender').value || null,
@@ -362,6 +421,8 @@ document.getElementById('saveStaff').addEventListener('click', async ()=>{
     hire_date: document.getElementById('f_hire').value || null,
     status: document.getElementById('f_status').value
   };
+  if(photo_url) payload.photo_url = photo_url;
+
   let error;
   if(editingStaffId){ ({error} = await sb.from('staff').update(payload).eq('staff_id', editingStaffId)); }
   else { ({error} = await sb.from('staff').insert(payload)); }
@@ -427,17 +488,31 @@ window.deleteAssignment = deleteAssignment;
 // ---------- BULK IMPORT (Excel) ----------
 const bulkOverlay = document.getElementById('bulkOverlay');
 let parsedStaffRows = [];
+let matchedStaffPhotoFiles = [];
 
 document.getElementById('btnBulkImportStaff').addEventListener('click', ()=>{
   document.getElementById('staffExcelPreview').style.display = 'none';
   document.getElementById('staffExcelPreviewBody').innerHTML = '';
   document.getElementById('staffExcelProgress').textContent = '';
   document.getElementById('btnConfirmStaffImport').disabled = true;
+  document.getElementById('staffPhotoPreview').style.display = 'none';
+  document.getElementById('staffPhotoPreviewBody').innerHTML = '';
+  document.getElementById('staffPhotoProgress').textContent = '';
+  document.getElementById('btnConfirmStaffPhotoImport').disabled = true;
   parsedStaffRows = [];
+  matchedStaffPhotoFiles = [];
   bulkOverlay.classList.add('open');
 });
 document.getElementById('closeBulk').addEventListener('click', ()=>bulkOverlay.classList.remove('open'));
-document.getElementById('cancelBulkStaff').addEventListener('click', ()=>bulkOverlay.classList.remove('open'));
+
+document.querySelectorAll('.bulk-tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.bulk-tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.bulk-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('bulk-'+btn.dataset.bulk).classList.add('active');
+  });
+});
 
 document.getElementById('btnDownloadStaffTemplate').addEventListener('click', ()=>{
   const headers = ['staff_code','first_name','last_name','gender','date_of_birth','phone','position','department','hire_date','status'];
@@ -513,6 +588,59 @@ document.getElementById('btnConfirmStaffImport').addEventListener('click', async
 
   progress.textContent = `ນຳເຂົ້າສຳເລັດ ${done} ຄົນ`;
   toast(`ນຳເຂົ້າສຳເລັດ ${done} ຄົນ`);
+  loadStaff();
+});
+
+// ---- Bulk photo upload ----
+document.getElementById('staffPhotoBulkInput').addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  if(files.length===0) return;
+
+  const {data: allS} = await sb.from('staff').select('staff_id, staff_code, first_name, last_name');
+  const byCode = {};
+  (allS||[]).forEach(s=>{ byCode[s.staff_code.toUpperCase()] = s; });
+
+  matchedStaffPhotoFiles = [];
+  const body = document.getElementById('staffPhotoPreviewBody');
+  document.getElementById('staffPhotoPreview').style.display = 'block';
+  let matchedCount = 0;
+
+  body.innerHTML = files.map(file=>{
+    const codeGuess = file.name.replace(/\.[^.]+$/,'').toUpperCase();
+    const person = byCode[codeGuess];
+    if(person){
+      matchedCount++;
+      matchedStaffPhotoFiles.push({file, person});
+      return `<tr><td class="row-ok">${esc(file.name)}</td><td>${esc(person.first_name)} ${esc(person.last_name)}</td><td>✓</td></tr>`;
+    }
+    return `<tr><td class="row-bad">${esc(file.name)}</td><td>-</td><td class="row-bad">ບໍ່ພົບລະຫັດນີ້</td></tr>`;
+  }).join('');
+
+  document.getElementById('staffPhotoProgress').textContent = `ຈັບຄູ່ໄດ້ ${matchedCount} ຮູບ`;
+  document.getElementById('btnConfirmStaffPhotoImport').disabled = matchedCount===0;
+});
+
+document.getElementById('btnConfirmStaffPhotoImport').addEventListener('click', async ()=>{
+  const progress = document.getElementById('staffPhotoProgress');
+  document.getElementById('btnConfirmStaffPhotoImport').disabled = true;
+  let ok = 0, failed = 0;
+
+  for(const {file, person} of matchedStaffPhotoFiles){
+    const ext = file.name.split('.').pop();
+    const path = `${person.staff_code}-${Date.now()}.${ext}`;
+    const {error: upErr} = await sb.storage.from(PHOTO_BUCKET).upload(path, file, {upsert:true});
+    if(!upErr){
+      const {data:pub} = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+      const {error: updErr} = await sb.from('staff').update({photo_url: pub.publicUrl}).eq('staff_id', person.staff_id);
+      if(!updErr) ok++; else failed++;
+    } else {
+      failed++;
+    }
+    progress.textContent = `ກຳລັງອັບໂຫລດ ${ok+failed}/${matchedStaffPhotoFiles.length} ...`;
+  }
+
+  progress.textContent = failed>0 ? `ອັບໂຫລດສຳເລັດ ${ok} ຮູບ, ລົ້ມເຫຼວ ${failed} ຮູບ` : `ອັບໂຫລດສຳເລັດ ${ok} ຮູບ`;
+  toast(progress.textContent);
   loadStaff();
 });
 
