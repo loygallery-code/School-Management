@@ -55,6 +55,7 @@
   td{padding:8px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
   td input.comp-input{width:60px; text-align:center;}
+  td input.term-avg-input{width:65px; text-align:center; background:var(--paper-2); color:var(--ink-soft);}
   td input.score-input{width:70px; text-align:center; font-weight:700; background:var(--paper-2);}
   td input.grade-input{width:110px; font-weight:600;}
   td input.grade-fail{color:var(--stamp); border-color:var(--stamp);}
@@ -117,7 +118,11 @@
       <div style="flex:0; align-self:flex-end;"><button class="btn secondary" id="btnAddSubject" type="button" style="white-space:nowrap;">+ ເພີ່ມວິຊາ</button></div>
     </div>
     <table>
-      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ສອບເສັງ<br>(/5)</th><th>ວຽກບ້ານ<br>(/2)</th><th>ຮ່ວມຮຽນ<br>(/2)</th><th>ອື່ນໆ<br>(/1)</th><th>ລວມ<br>(/10)</th><th>ລະດັບ</th></tr></thead>
+      <thead><tr id="scoreTableHead">
+        <th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th>
+        <th id="m1Head">ເດືອນ1</th><th id="m2Head">ເດືອນ2</th><th id="m3Head">ເດືອນ3</th><th id="m4Head">ເດືອນ4</th>
+        <th>ສະເລ່ຍ<br>ພາກຮຽນ</th><th>ສອບເສັງ<br>ພາກຮຽນ</th><th>ລວມ<br>(/10)</th><th>ລະດັບ</th>
+      </tr></thead>
       <tbody id="scoreBody"></tbody>
     </table>
     <div id="scoreEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ, ພາກຮຽນ, ວິຊາ ກ່ອນ</div>
@@ -183,21 +188,45 @@ function scoreToGrade(score){
 }
 function updateGradeCell(input){
   const row = input.closest('tr');
-  const exam = parseFloat(row.querySelector('.comp-exam').value) || 0;
-  const hw = parseFloat(row.querySelector('.comp-hw').value) || 0;
-  const part = parseFloat(row.querySelector('.comp-part').value) || 0;
-  const other = parseFloat(row.querySelector('.comp-other').value) || 0;
-  const total = Math.min(10, exam + hw + part + other);
+  const m1 = row.querySelector('.comp-m1').value;
+  const m2 = row.querySelector('.comp-m2').value;
+  const m3 = row.querySelector('.comp-m3').value;
+  const m4 = row.querySelector('.comp-m4').value;
+  const exam = row.querySelector('.comp-exam').value;
+
+  const months = [m1,m2,m3,m4].filter(v=>v!=='').map(parseFloat);
+  const termAvg = months.length ? (months.reduce((a,b)=>a+b,0)/months.length) : null;
+
+  const avgCell = row.querySelector('.term-avg-input');
+  avgCell.value = termAvg !== null ? termAvg.toFixed(2) : '';
+
+  const examVal = exam === '' ? null : parseFloat(exam);
+  let total = null;
+  if(termAvg !== null && examVal !== null) total = (termAvg + examVal) / 2;
+  else if(termAvg !== null) total = termAvg;
+  else if(examVal !== null) total = examVal;
 
   const scoreInput = row.querySelector('.score-input');
-  scoreInput.value = total.toFixed(2);
+  scoreInput.value = total !== null ? total.toFixed(2) : '';
 
   const gradeInput = row.querySelector('.grade-input');
-  const grade = scoreToGrade(total);
+  const grade = total !== null ? scoreToGrade(total) : '';
   gradeInput.value = grade;
   gradeInput.classList.toggle('grade-fail', grade === 'ອ່ອນ/ຕົກ');
 }
 window.updateGradeCell = updateGradeCell;
+
+// Update the 4 month column headers based on the selected term (1st half vs 2nd half of year)
+function updateMonthHeaders(){
+  const termSel = document.getElementById('sc_term');
+  const termName = termSel.options[termSel.selectedIndex]?.textContent || '';
+  const isTerm2 = termName.includes('2');
+  const labels = isTerm2 ? ['ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ'] : ['ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+  document.getElementById('m1Head').textContent = labels[0];
+  document.getElementById('m2Head').textContent = labels[1];
+  document.getElementById('m3Head').textContent = labels[2];
+  document.getElementById('m4Head').textContent = labels[3];
+}
 
 document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -248,6 +277,7 @@ async function refreshTerms(){
   const {data} = await sb.from('terms').select('*').eq('academic_year_id', yearId);
   terms = data||[];
   document.getElementById('sc_term').innerHTML = terms.length ? terms.map(t=>`<option value="${t.term_id}">${esc(t.term_name)}</option>`).join('') : `<option value="">ບໍ່ມີພາກຮຽນ</option>`;
+  updateMonthHeaders();
   loadScoreTable();
 }
 async function refreshAtClassrooms(){
@@ -258,7 +288,7 @@ async function refreshAtClassrooms(){
 }
 document.getElementById('sc_year').addEventListener('change', refreshScClassrooms);
 document.getElementById('sc_classroom').addEventListener('change', loadScoreTable);
-document.getElementById('sc_term').addEventListener('change', loadScoreTable);
+document.getElementById('sc_term').addEventListener('change', ()=>{ updateMonthHeaders(); loadScoreTable(); });
 document.getElementById('sc_subject').addEventListener('change', loadScoreTable);
 document.getElementById('at_year').addEventListener('change', refreshAtClassrooms);
 document.getElementById('at_classroom').addEventListener('change', loadAttendanceTable);
@@ -287,25 +317,34 @@ async function loadScoreTable(){
   body.innerHTML = (enrolled||[]).map(e=>{
     const s = e.students;
     const ex = existingMap[s.student_id];
+    const m1Val = ex ? (ex.month1_score ?? '') : '';
+    const m2Val = ex ? (ex.month2_score ?? '') : '';
+    const m3Val = ex ? (ex.month3_score ?? '') : '';
+    const m4Val = ex ? (ex.month4_score ?? '') : '';
     const examVal = ex ? (ex.exam_score ?? '') : '';
-    const hwVal = ex ? (ex.homework_score ?? '') : '';
-    const partVal = ex ? (ex.participation_score ?? '') : '';
-    const otherVal = ex ? (ex.other_score ?? '') : '';
     const scoreVal = ex ? ex.average_score : '';
     const gradeVal = ex ? (ex.grade_letter || scoreToGrade(ex.average_score)) : '';
     const isFail = gradeVal === 'ອ່ອນ/ຕົກ';
     return `<tr data-student="${s.student_id}">
       <td>${esc(s.student_code)}</td>
       <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
-      <td><input type="number" min="0" max="5" step="0.1" class="comp-input comp-exam" value="${examVal}" oninput="updateGradeCell(this)"></td>
-      <td><input type="number" min="0" max="2" step="0.1" class="comp-input comp-hw" value="${hwVal}" oninput="updateGradeCell(this)"></td>
-      <td><input type="number" min="0" max="2" step="0.1" class="comp-input comp-part" value="${partVal}" oninput="updateGradeCell(this)"></td>
-      <td><input type="number" min="0" max="1" step="0.1" class="comp-input comp-other" value="${otherVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m1" value="${m1Val}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m2" value="${m2Val}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m3" value="${m3Val}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m4" value="${m4Val}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" class="term-avg-input" readonly></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-exam" value="${examVal}" oninput="updateGradeCell(this)"></td>
       <td><input type="number" class="score-input" value="${scoreVal}" readonly></td>
       <td><input type="text" class="grade-input ${isFail?'grade-fail':''}" value="${esc(gradeVal)}" readonly></td>
     </tr>`;
   }).join('');
   document.getElementById('scoreEmpty').style.display = (enrolled||[]).length ? 'none' : 'block';
+
+  // populate the read-only term-average cells for existing rows
+  document.querySelectorAll('#scoreBody tr').forEach(row=>{
+    const anyMonth = row.querySelector('.comp-m1');
+    if(anyMonth && anyMonth.value !== '') updateGradeCell(anyMonth);
+  });
 }
 
 document.getElementById('btnSaveScores').addEventListener('click', async ()=>{
@@ -317,24 +356,26 @@ document.getElementById('btnSaveScores').addEventListener('click', async ()=>{
   let saved = 0;
   for(const row of rows){
     const studentId = row.dataset.student;
+    const m1Val = row.querySelector('.comp-m1').value;
+    const m2Val = row.querySelector('.comp-m2').value;
+    const m3Val = row.querySelector('.comp-m3').value;
+    const m4Val = row.querySelector('.comp-m4').value;
     const examVal = row.querySelector('.comp-exam').value;
-    const hwVal = row.querySelector('.comp-hw').value;
-    const partVal = row.querySelector('.comp-part').value;
-    const otherVal = row.querySelector('.comp-other').value;
     const score = row.querySelector('.score-input').value;
     const gradeLetter = row.querySelector('.grade-input').value.trim();
     // skip rows where nothing at all was entered
-    if(examVal === '' && hwVal === '' && partVal === '' && otherVal === '') continue;
+    if(m1Val === '' && m2Val === '' && m3Val === '' && m4Val === '' && examVal === '') continue;
 
     const {data:existing} = await sb.from('term_results').select('result_id')
       .eq('student_id', studentId).eq('term_id', termId).eq('subject_id', subjectId).maybeSingle();
 
     const payload = {
       student_id: studentId, term_id: termId, subject_id: subjectId,
+      month1_score: m1Val === '' ? null : parseFloat(m1Val),
+      month2_score: m2Val === '' ? null : parseFloat(m2Val),
+      month3_score: m3Val === '' ? null : parseFloat(m3Val),
+      month4_score: m4Val === '' ? null : parseFloat(m4Val),
       exam_score: examVal === '' ? null : parseFloat(examVal),
-      homework_score: hwVal === '' ? null : parseFloat(hwVal),
-      participation_score: partVal === '' ? null : parseFloat(partVal),
-      other_score: otherVal === '' ? null : parseFloat(otherVal),
       average_score: score === '' ? null : parseFloat(score),
       grade_letter: gradeLetter || null
     };
