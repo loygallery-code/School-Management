@@ -58,14 +58,6 @@
   td input.grade-input{width:110px; font-weight:600;}
   td input.grade-fail{color:var(--stamp); border-color:var(--stamp);}
   .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
-  .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
-  .overlay.open{display:flex;}
-  .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:440px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
-  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
-  .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
-  .modal-head button{background:none;border:none;color:var(--paper); font-size:20px;cursor:pointer;}
-  .modal-body{padding:20px 22px; display:grid; gap:14px;}
-  .modal-foot{padding:16px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--line);}
   .status-pick{display:flex; gap:4px;}
   .status-pick button{padding:6px 10px; font-size:12px; border-radius:20px; border:1px solid var(--line); background:var(--white); cursor:pointer; color:var(--ink-soft);}
   .status-pick button.sel-present{background:var(--ok); color:#fff; border-color:var(--ok);}
@@ -113,7 +105,6 @@
       <div><label>ຫ້ອງຮຽນ</label><select id="sc_classroom"></select></div>
       <div><label>ພາກຮຽນ</label><select id="sc_term"></select></div>
       <div><label>ວິຊາ</label><select id="sc_subject"></select></div>
-      <div style="flex:0; align-self:flex-end;"><button class="btn secondary" id="btnAddSubject" type="button" style="white-space:nowrap;">+ ເພີ່ມວິຊາ</button></div>
     </div>
     <table>
       <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຄະແນນສະເລ່ຍ (/10)</th><th>ລະດັບ</th></tr></thead>
@@ -139,25 +130,6 @@
   </section>
 </main>
 </div>
-</div>
-
-<!-- ===== ADD SUBJECT MODAL ===== -->
-<div class="overlay" id="subjectOverlay">
-  <div class="modal">
-    <div class="modal-head"><h2>ເພີ່ມວິຊາຮຽນ</h2><button id="closeSubjectModal">&times;</button></div>
-    <div class="modal-body">
-      <div><label>ຊື່ວິຊາ *</label><input type="text" id="new_subject_name" placeholder="ເຊັ່ນ ພາສາລາວ"></div>
-      <div><label>ລະດັບການສຶກສາ</label>
-        <select id="new_subject_level">
-          <option value="">ທຸກລະດັບ (ບໍ່ຈຳກັດ)</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn secondary" id="cancelSubjectModal">ຍົກເລີກ</button>
-      <button class="btn stamp" id="saveSubject">ບັນທຶກ</button>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -198,25 +170,22 @@ document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
   });
 });
 
-let grades=[], years=[], classrooms=[], subjects=[], terms=[], educationLevels=[];
+let grades=[], years=[], classrooms=[], subjects=[], terms=[];
 
 async function loadReferenceData(){
-  const [{data:g},{data:y},{data:c},{data:sub},{data:el}] = await Promise.all([
+  const [{data:g},{data:y},{data:c},{data:sub}] = await Promise.all([
     sb.from('grade_levels').select('*').order('grade_order'),
     sb.from('academic_years').select('*').order('start_date',{ascending:false}),
     sb.from('classrooms').select('*'),
-    sb.from('subjects').select('*').order('subject_name'),
-    sb.from('education_levels').select('*').order('level_order')
+    sb.from('subjects').select('*').order('subject_name')
   ]);
-  grades=g||[]; years=y||[]; classrooms=c||[]; subjects=sub||[]; educationLevels=el||[];
+  grades=g||[]; years=y||[]; classrooms=c||[]; subjects=sub||[];
 
   const yearOpts = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
   document.getElementById('sc_year').innerHTML = yearOpts;
   document.getElementById('at_year').innerHTML = yearOpts;
   document.getElementById('sc_subject').innerHTML = subjects.map(s=>`<option value="${s.subject_id}">${esc(s.subject_name)}</option>`).join('');
   document.getElementById('at_date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('new_subject_level').innerHTML = `<option value="">ທຸກລະດັບ (ບໍ່ຈຳກັດ)</option>` +
-    educationLevels.map(l=>`<option value="${l.level_id}">${esc(l.level_name)}</option>`).join('');
 
   await refreshScClassrooms();
   await refreshAtClassrooms();
@@ -375,29 +344,6 @@ document.getElementById('btnSaveAttendance').addEventListener('click', async ()=
 });
 
 loadReferenceData();
-
-// ---------- ADD SUBJECT ----------
-const subjectOverlay = document.getElementById('subjectOverlay');
-document.getElementById('btnAddSubject').addEventListener('click', ()=>{
-  document.getElementById('new_subject_name').value = '';
-  document.getElementById('new_subject_level').value = '';
-  subjectOverlay.classList.add('open');
-});
-document.getElementById('closeSubjectModal').addEventListener('click', ()=>subjectOverlay.classList.remove('open'));
-document.getElementById('cancelSubjectModal').addEventListener('click', ()=>subjectOverlay.classList.remove('open'));
-
-document.getElementById('saveSubject').addEventListener('click', async ()=>{
-  const name = document.getElementById('new_subject_name').value.trim();
-  const levelId = document.getElementById('new_subject_level').value || null;
-  if(!name){ toast('ກະລຸນາປ້ອນຊື່ວິຊາ'); return; }
-
-  const {error} = await sb.from('subjects').insert({subject_name: name, level_id: levelId});
-  if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
-
-  toast('ເພີ່ມວິຊາສຳເລັດ');
-  subjectOverlay.classList.remove('open');
-  await loadReferenceData();
-});
 </script>
 </body>
 </html>
