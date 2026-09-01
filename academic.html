@@ -54,10 +54,19 @@
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:8px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
-  td input.score-input{width:80px;}
+  td input.comp-input{width:60px; text-align:center;}
+  td input.score-input{width:70px; text-align:center; font-weight:700; background:var(--paper-2);}
   td input.grade-input{width:110px; font-weight:600;}
   td input.grade-fail{color:var(--stamp); border-color:var(--stamp);}
   .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
+  .overlay{display:none; position:fixed; inset:0; background:rgba(29,43,79,.45); align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--paper); border:1px solid var(--line); border-radius:8px; width:100%; max-width:440px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:2px double var(--gold); background:var(--ink); color:var(--paper); border-radius:8px 8px 0 0;}
+  .modal-head h2{font-family:'Noto Serif Lao',serif; font-size:18px; margin:0;}
+  .modal-head button{background:none;border:none;color:var(--paper); font-size:20px;cursor:pointer;}
+  .modal-body{padding:20px 22px; display:grid; gap:14px;}
+  .modal-foot{padding:16px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--line);}
   .status-pick{display:flex; gap:4px;}
   .status-pick button{padding:6px 10px; font-size:12px; border-radius:20px; border:1px solid var(--line); background:var(--white); cursor:pointer; color:var(--ink-soft);}
   .status-pick button.sel-present{background:var(--ok); color:#fff; border-color:var(--ok);}
@@ -105,9 +114,10 @@
       <div><label>ຫ້ອງຮຽນ</label><select id="sc_classroom"></select></div>
       <div><label>ພາກຮຽນ</label><select id="sc_term"></select></div>
       <div><label>ວິຊາ</label><select id="sc_subject"></select></div>
+      <div style="flex:0; align-self:flex-end;"><button class="btn secondary" id="btnAddSubject" type="button" style="white-space:nowrap;">+ ເພີ່ມວິຊາ</button></div>
     </div>
     <table>
-      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຄະແນນສະເລ່ຍ (/10)</th><th>ລະດັບ</th></tr></thead>
+      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ສອບເສັງ<br>(/5)</th><th>ວຽກບ້ານ<br>(/2)</th><th>ຮ່ວມຮຽນ<br>(/2)</th><th>ອື່ນໆ<br>(/1)</th><th>ລວມ<br>(/10)</th><th>ລະດັບ</th></tr></thead>
       <tbody id="scoreBody"></tbody>
     </table>
     <div id="scoreEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ, ພາກຮຽນ, ວິຊາ ກ່ອນ</div>
@@ -132,6 +142,25 @@
 </div>
 </div>
 
+<!-- ===== ADD SUBJECT MODAL ===== -->
+<div class="overlay" id="subjectOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>ເພີ່ມວິຊາຮຽນ</h2><button id="closeSubjectModal">&times;</button></div>
+    <div class="modal-body">
+      <div><label>ຊື່ວິຊາ *</label><input type="text" id="new_subject_name" placeholder="ເຊັ່ນ ພາສາລາວ"></div>
+      <div><label>ລະດັບການສຶກສາ</label>
+        <select id="new_subject_level">
+          <option value="">ທຸກລະດັບ (ບໍ່ຈຳກັດ)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="cancelSubjectModal">ຍົກເລີກ</button>
+      <button class="btn stamp" id="saveSubject">ບັນທຶກ</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -154,8 +183,17 @@ function scoreToGrade(score){
 }
 function updateGradeCell(input){
   const row = input.closest('tr');
+  const exam = parseFloat(row.querySelector('.comp-exam').value) || 0;
+  const hw = parseFloat(row.querySelector('.comp-hw').value) || 0;
+  const part = parseFloat(row.querySelector('.comp-part').value) || 0;
+  const other = parseFloat(row.querySelector('.comp-other').value) || 0;
+  const total = Math.min(10, exam + hw + part + other);
+
+  const scoreInput = row.querySelector('.score-input');
+  scoreInput.value = total.toFixed(2);
+
   const gradeInput = row.querySelector('.grade-input');
-  const grade = scoreToGrade(input.value);
+  const grade = scoreToGrade(total);
   gradeInput.value = grade;
   gradeInput.classList.toggle('grade-fail', grade === 'ອ່ອນ/ຕົກ');
 }
@@ -170,22 +208,25 @@ document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
   });
 });
 
-let grades=[], years=[], classrooms=[], subjects=[], terms=[];
+let grades=[], years=[], classrooms=[], subjects=[], terms=[], educationLevels=[];
 
 async function loadReferenceData(){
-  const [{data:g},{data:y},{data:c},{data:sub}] = await Promise.all([
+  const [{data:g},{data:y},{data:c},{data:sub},{data:el}] = await Promise.all([
     sb.from('grade_levels').select('*').order('grade_order'),
     sb.from('academic_years').select('*').order('start_date',{ascending:false}),
     sb.from('classrooms').select('*'),
-    sb.from('subjects').select('*').order('subject_name')
+    sb.from('subjects').select('*').order('subject_name'),
+    sb.from('education_levels').select('*').order('level_order')
   ]);
-  grades=g||[]; years=y||[]; classrooms=c||[]; subjects=sub||[];
+  grades=g||[]; years=y||[]; classrooms=c||[]; subjects=sub||[]; educationLevels=el||[];
 
   const yearOpts = years.map(y=>`<option value="${y.academic_year_id}" ${y.is_current?'selected':''}>${y.year_name}</option>`).join('');
   document.getElementById('sc_year').innerHTML = yearOpts;
   document.getElementById('at_year').innerHTML = yearOpts;
   document.getElementById('sc_subject').innerHTML = subjects.map(s=>`<option value="${s.subject_id}">${esc(s.subject_name)}</option>`).join('');
   document.getElementById('at_date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('new_subject_level').innerHTML = `<option value="">ທຸກລະດັບ (ບໍ່ຈຳກັດ)</option>` +
+    educationLevels.map(l=>`<option value="${l.level_id}">${esc(l.level_name)}</option>`).join('');
 
   await refreshScClassrooms();
   await refreshAtClassrooms();
@@ -246,13 +287,21 @@ async function loadScoreTable(){
   body.innerHTML = (enrolled||[]).map(e=>{
     const s = e.students;
     const ex = existingMap[s.student_id];
+    const examVal = ex ? (ex.exam_score ?? '') : '';
+    const hwVal = ex ? (ex.homework_score ?? '') : '';
+    const partVal = ex ? (ex.participation_score ?? '') : '';
+    const otherVal = ex ? (ex.other_score ?? '') : '';
     const scoreVal = ex ? ex.average_score : '';
     const gradeVal = ex ? (ex.grade_letter || scoreToGrade(ex.average_score)) : '';
     const isFail = gradeVal === 'ອ່ອນ/ຕົກ';
     return `<tr data-student="${s.student_id}">
       <td>${esc(s.student_code)}</td>
       <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
-      <td><input type="number" min="0" max="10" step="0.1" class="score-input" value="${scoreVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="5" step="0.1" class="comp-input comp-exam" value="${examVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="2" step="0.1" class="comp-input comp-hw" value="${hwVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="2" step="0.1" class="comp-input comp-part" value="${partVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="1" step="0.1" class="comp-input comp-other" value="${otherVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" class="score-input" value="${scoreVal}" readonly></td>
       <td><input type="text" class="grade-input ${isFail?'grade-fail':''}" value="${esc(gradeVal)}" readonly></td>
     </tr>`;
   }).join('');
@@ -268,14 +317,27 @@ document.getElementById('btnSaveScores').addEventListener('click', async ()=>{
   let saved = 0;
   for(const row of rows){
     const studentId = row.dataset.student;
+    const examVal = row.querySelector('.comp-exam').value;
+    const hwVal = row.querySelector('.comp-hw').value;
+    const partVal = row.querySelector('.comp-part').value;
+    const otherVal = row.querySelector('.comp-other').value;
     const score = row.querySelector('.score-input').value;
     const gradeLetter = row.querySelector('.grade-input').value.trim();
-    if(score === '') continue;
+    // skip rows where nothing at all was entered
+    if(examVal === '' && hwVal === '' && partVal === '' && otherVal === '') continue;
 
     const {data:existing} = await sb.from('term_results').select('result_id')
       .eq('student_id', studentId).eq('term_id', termId).eq('subject_id', subjectId).maybeSingle();
 
-    const payload = { student_id: studentId, term_id: termId, subject_id: subjectId, average_score: parseFloat(score), grade_letter: gradeLetter || null };
+    const payload = {
+      student_id: studentId, term_id: termId, subject_id: subjectId,
+      exam_score: examVal === '' ? null : parseFloat(examVal),
+      homework_score: hwVal === '' ? null : parseFloat(hwVal),
+      participation_score: partVal === '' ? null : parseFloat(partVal),
+      other_score: otherVal === '' ? null : parseFloat(otherVal),
+      average_score: score === '' ? null : parseFloat(score),
+      grade_letter: gradeLetter || null
+    };
     if(existing){ await sb.from('term_results').update(payload).eq('result_id', existing.result_id); }
     else { await sb.from('term_results').insert(payload); }
     saved++;
@@ -344,6 +406,29 @@ document.getElementById('btnSaveAttendance').addEventListener('click', async ()=
 });
 
 loadReferenceData();
+
+// ---------- ADD SUBJECT ----------
+const subjectOverlay = document.getElementById('subjectOverlay');
+document.getElementById('btnAddSubject').addEventListener('click', ()=>{
+  document.getElementById('new_subject_name').value = '';
+  document.getElementById('new_subject_level').value = '';
+  subjectOverlay.classList.add('open');
+});
+document.getElementById('closeSubjectModal').addEventListener('click', ()=>subjectOverlay.classList.remove('open'));
+document.getElementById('cancelSubjectModal').addEventListener('click', ()=>subjectOverlay.classList.remove('open'));
+
+document.getElementById('saveSubject').addEventListener('click', async ()=>{
+  const name = document.getElementById('new_subject_name').value.trim();
+  const levelId = document.getElementById('new_subject_level').value || null;
+  if(!name){ toast('ກະລຸນາປ້ອນຊື່ວິຊາ'); return; }
+
+  const {error} = await sb.from('subjects').insert({subject_name: name, level_id: levelId});
+  if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
+
+  toast('ເພີ່ມວິຊາສຳເລັດ');
+  subjectOverlay.classList.remove('open');
+  await loadReferenceData();
+});
 </script>
 </body>
 </html>
