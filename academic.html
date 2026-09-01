@@ -54,7 +54,9 @@
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:8px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
-  td input[type=number]{width:80px;} td input[type=text]{width:70px;}
+  td input.score-input{width:80px;}
+  td input.grade-input{width:110px; font-weight:600;}
+  td input.grade-fail{color:var(--stamp); border-color:var(--stamp);}
   .empty{text-align:center; padding:30px 20px; color:var(--ink-soft); font-size:14px;}
   .status-pick{display:flex; gap:4px;}
   .status-pick button{padding:6px 10px; font-size:12px; border-radius:20px; border:1px solid var(--line); background:var(--white); cursor:pointer; color:var(--ink-soft);}
@@ -105,7 +107,7 @@
       <div><label>ວິຊາ</label><select id="sc_subject"></select></div>
     </div>
     <table>
-      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຄະແນນສະເລ່ຍ (/100)</th><th>ເກຣດ</th></tr></thead>
+      <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຄະແນນສະເລ່ຍ (/10)</th><th>ລະດັບ</th></tr></thead>
       <tbody id="scoreBody"></tbody>
     </table>
     <div id="scoreEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ, ພາກຮຽນ, ວິຊາ ກ່ອນ</div>
@@ -139,6 +141,25 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- 10-point grading scale ----------
+function scoreToGrade(score){
+  if(score === '' || score === null || isNaN(score)) return '';
+  const n = parseFloat(score);
+  if(n >= 9) return 'ດີເລີດ';
+  if(n >= 8) return 'ດີ';
+  if(n >= 7) return 'ຂ້ອນຂ້າງດີ';
+  if(n >= 5) return 'ປານກາງ';
+  return 'ອ່ອນ/ຕົກ';
+}
+function updateGradeCell(input){
+  const row = input.closest('tr');
+  const gradeInput = row.querySelector('.grade-input');
+  const grade = scoreToGrade(input.value);
+  gradeInput.value = grade;
+  gradeInput.classList.toggle('grade-fail', grade === 'ອ່ອນ/ຕົກ');
+}
+window.updateGradeCell = updateGradeCell;
 
 document.querySelectorAll('nav.tabs .tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -225,11 +246,14 @@ async function loadScoreTable(){
   body.innerHTML = (enrolled||[]).map(e=>{
     const s = e.students;
     const ex = existingMap[s.student_id];
+    const scoreVal = ex ? ex.average_score : '';
+    const gradeVal = ex ? (ex.grade_letter || scoreToGrade(ex.average_score)) : '';
+    const isFail = gradeVal === 'ອ່ອນ/ຕົກ';
     return `<tr data-student="${s.student_id}">
       <td>${esc(s.student_code)}</td>
       <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
-      <td><input type="number" min="0" max="100" step="0.1" class="score-input" value="${ex?ex.average_score:''}"></td>
-      <td><input type="text" class="grade-input" value="${ex?esc(ex.grade_letter||''):''}" placeholder="A/B/C"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="score-input" value="${scoreVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="text" class="grade-input ${isFail?'grade-fail':''}" value="${esc(gradeVal)}" readonly></td>
     </tr>`;
   }).join('');
   document.getElementById('scoreEmpty').style.display = (enrolled||[]).length ? 'none' : 'block';
