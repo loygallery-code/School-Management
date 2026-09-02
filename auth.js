@@ -23,8 +23,10 @@ const PAGE_ACCESS = {
 };
 
 function getCurrentPage(){
-  const path = window.location.pathname.split('/').pop();
-  return path || 'index.html';
+  let path = window.location.pathname.split('/').pop();
+  if(!path) return 'index.html';
+  if(!path.endsWith('.html')) path += '.html';
+  return path;
 }
 
 function getSession(){
@@ -52,7 +54,12 @@ async function guardPage(){
   }
 
   const page = getCurrentPage();
-  const access = (PAGE_ACCESS[page] || {})[session.role] || 'none';
+  let access = (PAGE_ACCESS[page] || {})[session.role] || 'none';
+
+  // ຄວາມປອດໄພເພີ່ມເຕີມ: ແອັດມີນ ແລະ ຜູ້ບໍລິຫານ ຕ້ອງບໍ່ຖືກລັອກອອກຈາກໜ້າໃດເລີຍ
+  if(session.role === 'admin_system' || session.role === 'director'){
+    access = 'edit';
+  }
 
   if(access === 'none'){
     alert('ທ່ານບໍ່ມີສິດເຂົ້າໜ້ານີ້');
