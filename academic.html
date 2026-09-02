@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <style>
   :root{ --paper:#F5F2EA; --paper-2:#EAE3D2; --ink:#16233F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --emerald:#1F6E52; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFFFF; --radius:8px; --sidebar-w:225px; }
   *{box-sizing:border-box;}
@@ -37,10 +38,18 @@
     .app-shell{flex-direction:column;}
     .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
     .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
-    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto; flex:1;}
     .side-link{white-space:nowrap;}
-    .sidebar-foot{display:none;}
-    main{padding:20px 16px 60px;} nav.tabs{padding:0 16px; overflow-x:auto;}
+    .sidebar-foot{display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:none; border-left:1px solid rgba(255,255,255,.12); flex-shrink:0; white-space:nowrap;}
+    .sidebar-foot > div{display:none;}
+    .sidebar-foot button{width:auto !important; padding:8px 12px !important;}
+    main{padding:20px 16px 60px;}
+    .overlay{padding:16px 10px; align-items:flex-start;}
+    .modal, .modal.wide{max-width:100%;}
+    .form-grid{gap:12px;}
+    .steps{flex-direction:column;}
+    .modal-foot{flex-wrap:wrap;}
+    input, select, textarea{font-size:16px;} nav.tabs{padding:0 16px; overflow-x:auto;}
   }
   .steps{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
   .steps div{flex:1; min-width:160px; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px;}
@@ -50,7 +59,9 @@
   .btn.stamp{background:var(--stamp); border-color:var(--stamp); color:#fff;}
   .btn.small{padding:6px 12px; font-size:12px;}
   .btn:hover{opacity:.9;}
-  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--radius); box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap table{box-shadow:none; border-radius:0;}
+  table{width:100%; min-width:560px; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:8px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
@@ -117,15 +128,16 @@
       <div><label>ວິຊາ</label><select id="sc_subject"></select></div>
       <div style="flex:0; align-self:flex-end;"><button class="btn secondary" id="btnAddSubject" type="button" style="white-space:nowrap;">+ ເພີ່ມວິຊາ</button></div>
     </div>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr id="scoreTableHead">
         <th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th>
         <th id="m1Head">ເດືອນ1</th><th id="m2Head">ເດືອນ2</th><th id="m3Head">ເດືອນ3</th><th id="m4Head">ເດືອນ4</th>
         <th>ສະເລ່ຍ<br>ພາກຮຽນ</th><th>ສອບເສັງ<br>ພາກຮຽນ</th><th>ລວມ<br>(/10)</th><th>ລະດັບ</th>
       </tr></thead>
       <tbody id="scoreBody"></tbody>
-    </table>
+    </table></div>
     <div id="scoreEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ, ພາກຮຽນ, ວິຊາ ກ່ອນ</div>
+    <div id="scoreViewNotice" class="progress-text" style="display:none; color:var(--stamp);">ທ່ານເບິ່ງໄດ້ຢ່າງດຽວ (ບໍ່ແມ່ນວິຊາ/ຫ້ອງທີ່ທ່ານສອນ)</div>
     <div style="margin-top:16px;"><button class="btn stamp" id="btnSaveScores">ບັນທຶກຄະແນນທັງໝົດ</button></div>
   </section>
 
@@ -136,10 +148,10 @@
       <div><label>ຫ້ອງຮຽນ</label><select id="at_classroom"></select></div>
       <div><label>ວັນທີ່</label><input type="date" id="at_date"></div>
     </div>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ສະຖານະ</th></tr></thead>
       <tbody id="attendanceBody"></tbody>
-    </table>
+    </table></div>
     <div id="attendanceEmpty" class="empty" style="display:none;">ກະລຸນາເລືອກ ຫ້ອງຮຽນ ແລະ ວັນທີ່ ກ່ອນ</div>
     <div style="margin-top:16px;"><button class="btn stamp" id="btnSaveAttendance">ບັນທຶກການເຂົ້າຮຽນ</button></div>
   </section>
@@ -172,6 +184,24 @@
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let CURRENT_SESSION = null;
+
+// ---------- ສິດແກ້ໄຂຄະແນນ (ອີງໃສ່ບົດບາດ + ການມອບໝາຍວິຊາ) ----------
+function canEditScores(classroomId, subjectId, yearId){
+  if(!CURRENT_SESSION) return false;
+  if(CURRENT_SESSION.role === 'admin_system' || CURRENT_SESSION.role === 'director') return true;
+  if(CURRENT_SESSION.role !== 'teacher' && CURRENT_SESSION.role !== 'academic_affairs') return false;
+  return (CURRENT_SESSION.subject_assignments || []).some(a =>
+    String(a.classroom_id) === String(classroomId) &&
+    String(a.subject_id) === String(subjectId) &&
+    String(a.academic_year_id) === String(yearId)
+  );
+}
+function isHomeroomTeacherOf(classroomId){
+  if(!CURRENT_SESSION) return false;
+  return (CURRENT_SESSION.homeroom_classrooms || []).some(h => String(h.classroom_id) === String(classroomId));
+}
 
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -268,7 +298,17 @@ function classroomLabel(c){
 
 async function refreshScClassrooms(){
   const yearId = document.getElementById('sc_year').value;
-  const opts = classrooms.filter(c=>String(c.academic_year_id)===String(yearId));
+  let opts = classrooms.filter(c=>String(c.academic_year_id)===String(yearId));
+
+  // ຄູສອນວິຊາ (teacher): ໃຫ້ເຫັນສະເພາະຫ້ອງທີ່ຕົນສອນ ຫຼື ເປັນຄູປະຈຳຫ້ອງ
+  if(CURRENT_SESSION && CURRENT_SESSION.role === 'teacher'){
+    const allowedIds = new Set([
+      ...(CURRENT_SESSION.subject_assignments||[]).map(a=>String(a.classroom_id)),
+      ...(CURRENT_SESSION.homeroom_classrooms||[]).map(h=>String(h.classroom_id))
+    ]);
+    opts = opts.filter(c => allowedIds.has(String(c.classroom_id)));
+  }
+
   document.getElementById('sc_classroom').innerHTML = opts.length ? opts.map(c=>`<option value="${c.classroom_id}">${classroomLabel(c)}</option>`).join('') : `<option value="">ບໍ່ມີຫ້ອງ</option>`;
   await refreshTerms();
 }
@@ -299,9 +339,16 @@ async function loadScoreTable(){
   const classroomId = document.getElementById('sc_classroom').value;
   const termId = document.getElementById('sc_term').value;
   const subjectId = document.getElementById('sc_subject').value;
+  const yearId = document.getElementById('sc_year').value;
   const body = document.getElementById('scoreBody');
   if(!classroomId || !termId || !subjectId){ body.innerHTML=''; document.getElementById('scoreEmpty').style.display='block'; return; }
   document.getElementById('scoreEmpty').style.display='none';
+
+  const editable = canEditScores(classroomId, subjectId, yearId);
+  const btnSave = document.getElementById('btnSaveScores');
+  btnSave.style.display = editable ? '' : 'none';
+  const viewNotice = document.getElementById('scoreViewNotice');
+  if(viewNotice) viewNotice.style.display = editable ? 'none' : 'block';
 
   const {data:enrolled, error} = await sb.from('student_enrollments')
     .select('students(student_id, student_code, first_name, last_name)')
@@ -314,6 +361,7 @@ async function loadScoreTable(){
   const existingMap = {};
   (existing||[]).forEach(r=>{ existingMap[r.student_id] = r; });
 
+  const ro = editable ? '' : 'readonly disabled';
   body.innerHTML = (enrolled||[]).map(e=>{
     const s = e.students;
     const ex = existingMap[s.student_id];
@@ -328,12 +376,12 @@ async function loadScoreTable(){
     return `<tr data-student="${s.student_id}">
       <td>${esc(s.student_code)}</td>
       <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
-      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m1" value="${m1Val}" oninput="updateGradeCell(this)"></td>
-      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m2" value="${m2Val}" oninput="updateGradeCell(this)"></td>
-      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m3" value="${m3Val}" oninput="updateGradeCell(this)"></td>
-      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m4" value="${m4Val}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m1" value="${m1Val}" oninput="updateGradeCell(this)" ${ro}></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m2" value="${m2Val}" oninput="updateGradeCell(this)" ${ro}></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m3" value="${m3Val}" oninput="updateGradeCell(this)" ${ro}></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-m4" value="${m4Val}" oninput="updateGradeCell(this)" ${ro}></td>
       <td><input type="number" class="term-avg-input" readonly></td>
-      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-exam" value="${examVal}" oninput="updateGradeCell(this)"></td>
+      <td><input type="number" min="0" max="10" step="0.1" class="comp-input comp-exam" value="${examVal}" oninput="updateGradeCell(this)" ${ro}></td>
       <td><input type="number" class="score-input" value="${scoreVal}" readonly></td>
       <td><input type="text" class="grade-input ${isFail?'grade-fail':''}" value="${esc(gradeVal)}" readonly></td>
     </tr>`;
@@ -446,7 +494,11 @@ document.getElementById('btnSaveAttendance').addEventListener('click', async ()=
   toast(`ບັນທຶກການເຂົ້າຮຽນສຳເລັດ ${saved} ຄົນ`);
 });
 
-loadReferenceData();
+(async function init(){
+  CURRENT_SESSION = await guardPage();
+  if(!CURRENT_SESSION) return;
+  await loadReferenceData();
+})();
 
 // ---------- ADD SUBJECT ----------
 const subjectOverlay = document.getElementById('subjectOverlay');

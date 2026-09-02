@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <style>
   :root{ --paper:#F5F2EA; --paper-2:#EAE3D2; --ink:#16233F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --emerald:#1F6E52; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFFFF; --radius:8px; --sidebar-w:225px; }
   *{box-sizing:border-box;}
@@ -37,10 +38,18 @@
     .app-shell{flex-direction:column;}
     .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
     .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
-    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto; flex:1;}
     .side-link{white-space:nowrap;}
-    .sidebar-foot{display:none;}
-    main{padding:20px 16px 60px;} nav.tabs{padding:0 16px; overflow-x:auto;}
+    .sidebar-foot{display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:none; border-left:1px solid rgba(255,255,255,.12); flex-shrink:0; white-space:nowrap;}
+    .sidebar-foot > div{display:none;}
+    .sidebar-foot button{width:auto !important; padding:8px 12px !important;}
+    main{padding:20px 16px 60px;}
+    .overlay{padding:16px 10px; align-items:flex-start;}
+    .modal, .modal.wide{max-width:100%;}
+    .form-grid{gap:12px;}
+    .steps{flex-direction:column;}
+    .modal-foot{flex-wrap:wrap;}
+    input, select, textarea{font-size:16px;} nav.tabs{padding:0 16px; overflow-x:auto;}
   }
   .card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:20px;}
   .section-title{font-family:'Noto Serif Lao',serif; font-size:16px; margin:0 0 12px;}
@@ -54,7 +63,9 @@
   .btn:hover{opacity:.9;}
   .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
   .toolbar input[type=text]{flex:1; min-width:200px;}
-  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--radius); box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap table{box-shadow:none; border-radius:0;}
+  table{width:100%; min-width:560px; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:9px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
@@ -134,7 +145,7 @@
         <button class="btn stamp" id="btnAddFeeType">+ ເພີ່ມ</button>
         <button class="btn secondary" id="btnCancelFeeTypeEdit" style="display:none;">ຍົກເລີກແກ້ໄຂ</button>
       </div>
-      <table><thead><tr><th>ຊື່ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th></th></tr></thead><tbody id="feeTypeBody"></tbody></table>
+      <div class="table-wrap"><table><thead><tr><th>ຊື່ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th></th></tr></thead><tbody id="feeTypeBody"></tbody></table></div>
     </div>
 
     <div class="card">
@@ -148,7 +159,7 @@
         <div><label>ຈຳນວນ</label><input type="number" id="fs_qty" min="0.01" step="0.01" value="1"></div>
       </div>
       <button class="btn stamp" id="btnAddFeeStructure">+ ກຳນົດຄ່າທຳນຽມ</button>
-      <table style="margin-top:16px;"><thead><tr><th>ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th>ຊັ້ນ</th><th>ປີ</th><th>ລາຄາ/ຫົວໜ່ວຍ</th><th>ຈຳນວນ</th><th>ລວມ</th><th></th></tr></thead><tbody id="feeStructureBody"></tbody></table>
+      <div class="table-wrap"><table style="margin-top:16px;"><thead><tr><th>ປະເພດ</th><th>ຫົວໜ່ວຍ</th><th>ຊັ້ນ</th><th>ປີ</th><th>ລາຄາ/ຫົວໜ່ວຍ</th><th>ຈຳນວນ</th><th>ລວມ</th><th></th></tr></thead><tbody id="feeStructureBody"></tbody></table></div>
     </div>
   </section>
 
@@ -190,10 +201,10 @@
           <option value="waived">ຍົກເວັ້ນ</option>
         </select>
       </div>
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>ນັກຮຽນ</th><th>ຈຳນວນລາຍການ</th><th>ຍອດຄ້າງລວມ</th><th>ຊຳລະແລ້ວ</th><th>ສະຖານະ</th><th></th></tr></thead>
         <tbody id="invoiceBody"></tbody>
-      </table>
+      </table></div>
       <div id="invoiceEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີໃບແຈ້ງໜີ້</div>
     </div>
   </section>
@@ -207,10 +218,10 @@
     <div class="modal-head"><h2 id="debtModalTitle">ລາຍລະອຽດໜີ້ນັກຮຽນ</h2><button id="closeDebt">&times;</button></div>
     <div class="modal-body">
       <div id="debtStudentInfo" style="margin-bottom:14px; font-size:14px;"></div>
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>ລາຍການ</th><th>ຄ້າງຈ່າຍ</th><th>ຊຳລະແລ້ວ</th><th>ສະຖານະ</th><th></th></tr></thead>
         <tbody id="debtItemsBody"></tbody>
-      </table>
+      </table></div>
       <div id="debtTotalRow" style="margin-top:12px; font-weight:700; font-size:15px;"></div>
     </div>
     <div class="modal-foot">
@@ -242,6 +253,8 @@
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let CURRENT_SESSION = null;
 
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -791,7 +804,7 @@ document.getElementById('btnPrintDebt').addEventListener('click', async ()=>{
     </div>
     <div style="font-size:13px; margin-bottom:2px;">ລະຫັດນັກຮຽນ: ${esc(group.student.student_code)}  ຊື່ ແລະ ນາມສະກຸນ: ${esc(group.student.first_name)} ${esc(group.student.last_name)}</div>
     <div style="font-size:13px; margin-bottom:10px;">ຊັ້ນຮຽນ: ${esc(gradeName)}  ສົກຮຽນ: ${esc(currentYear?.year_name||'-')}</div>
-    <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+    <div class="table-wrap"><table style="width:100%; border-collapse:collapse; font-size:12.5px;">
       <thead><tr style="background:var(--ink); color:#fff;">
         <th style="border:1px solid #ccc; padding:6px;">ລ/ດ</th>
         <th style="border:1px solid #ccc; padding:6px; text-align:left;">ລາຍການຄ່າທຳນຽມ</th>
@@ -800,7 +813,7 @@ document.getElementById('btnPrintDebt').addEventListener('click', async ()=>{
         <th style="border:1px solid #ccc; padding:6px;">ສະຖານະ</th>
       </tr></thead>
       <tbody>${rowsHtml}</tbody>
-    </table>
+    </table></div>
     <div style="margin-top:12px; font-size:13px; font-weight:700; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; background:#F6ECD2; border:1px solid var(--gold); border-radius:6px; padding:10px 14px;">
       <span>ລວມຄ່າຈ່າຍທັງໝົດ: ${fmtMoney(totalDue)} ກີບ</span>
       <span>ຊຳລະແລ້ວ: ${fmtMoney(totalPaid)} ກີບ</span>
@@ -848,7 +861,7 @@ document.getElementById('btnPrintReceipt').addEventListener('click', async ()=>{
     <div style="font-size:13px; margin-bottom:2px;">ລະຫັດນັກຮຽນ: ${esc(group.student.student_code)}  ຊື່ ແລະ ນາມສະກຸນ: ${esc(group.student.first_name)} ${esc(group.student.last_name)}</div>
     <div style="font-size:13px; margin-bottom:10px;">ຊັ້ນຮຽນ: ${esc(gradeName)}  ສົກຮຽນ: ${esc(currentYear?.year_name||'-')}</div>
     <div style="font-size:13px; margin-bottom:12px;">ຮູບແບບການຊຳລະ: ☐ ເງິນສົດ (Cash) &nbsp;&nbsp; ☐ ໂອນຜ່ານທະນາຄານ (Bank Transfer / BCEL One) &nbsp;&nbsp; ເລກອ້າງອີງ/Transaction ID: ..........................</div>
-    <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+    <div class="table-wrap"><table style="width:100%; border-collapse:collapse; font-size:12.5px;">
       <thead><tr style="background:var(--emerald); color:#fff;">
         <th style="border:1px solid #ccc; padding:6px;">ລ/ດ</th>
         <th style="border:1px solid #ccc; padding:6px; text-align:left;">ລາຍການທີ່ຊຳລະ</th>
@@ -857,7 +870,7 @@ document.getElementById('btnPrintReceipt').addEventListener('click', async ()=>{
         <th style="border:1px solid #ccc; padding:6px;">ສະຖານະ</th>
       </tr></thead>
       <tbody>${rowsHtml}</tbody>
-    </table>
+    </table></div>
     <div style="margin-top:12px; font-size:13px; font-weight:700; background:#E4F2E9; border:1px solid var(--emerald); border-radius:6px; padding:10px 14px;">
       ຈຳນວນເງິນທີ່ໄດ້ຮັບຕົວຈິງ: ${fmtMoney(totalPaid)} ກີບ
     </div>
@@ -915,9 +928,13 @@ document.getElementById('savePayment').addEventListener('click', async ()=>{
 });
 
 
-loadReferenceData();
-loadInvoices();
-loadStudentsForIndivSearch();
+(async function init(){
+  CURRENT_SESSION = await guardPage();
+  if(!CURRENT_SESSION) return;
+  loadReferenceData();
+  loadInvoices();
+  loadStudentsForIndivSearch();
+})();
 </script>
 </body>
 </html>

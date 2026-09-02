@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ເຂົ້າສູ່ລະບົບ | ລະບົບບໍລິຫານໂຮງຮຽນ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<style>
+  :root{ --paper:#F5F2EA; --ink:#16233F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --line:#D8D2C4; --white:#FFFFFF; --radius:8px; }
+  *{box-sizing:border-box;}
+  body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#16233F 0%,#0E1830 100%); font-family:'Noto Sans Lao','Noto Sans',sans-serif; padding:20px;}
+  .login-card{background:var(--paper); border-radius:12px; width:100%; max-width:400px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden;}
+  .login-head{background:var(--ink); color:#fff; padding:28px 24px; text-align:center; border-bottom:4px double var(--gold);}
+  .login-seal{width:56px; height:56px; border-radius:50%; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Serif Lao',serif; font-size:13px; color:var(--gold); margin:0 auto 12px;}
+  .login-head h1{font-family:'Noto Serif Lao',serif; font-size:19px; margin:0 0 4px;}
+  .login-head p{font-size:12px; color:#93A0BE; margin:0;}
+  .login-body{padding:28px 24px;}
+  label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  input{width:100%; font-family:inherit; font-size:16px; padding:11px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); margin-bottom:16px;}
+  .btn{width:100%; font-family:'Noto Sans Lao',sans-serif; font-weight:700; font-size:15px; padding:12px; border-radius:var(--radius); border:1px solid var(--stamp); background:var(--stamp); color:#fff; cursor:pointer;}
+  .btn:hover{opacity:.92;}
+  .btn:disabled{opacity:.6; cursor:not-allowed;}
+  .error-msg{background:#FBE7E7; color:var(--stamp); border:1px solid var(--stamp); border-radius:var(--radius); padding:10px 12px; font-size:13px; margin-bottom:16px; display:none;}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="login-head">
+    <div class="login-seal">ຮຮ</div>
+    <h1>ລະບົບບໍລິຫານໂຮງຮຽນ</h1>
+    <p>ໂຮງຮຽນອະນຸບານ ແລະ ສາມັນສຶກສາ ດວງປັນຍາ</p>
+  </div>
+  <div class="login-body">
+    <div class="error-msg" id="errorMsg"></div>
+    <label>ຊື່ຜູ້ໃຊ້</label>
+    <input type="text" id="username" autocomplete="username">
+    <label>ລະຫັດຜ່ານ</label>
+    <input type="password" id="password" autocomplete="current-password">
+    <button class="btn" id="btnLogin">ເຂົ້າສູ່ລະບົບ</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function showError(msg){
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function doLogin(){
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btnLogin');
+  document.getElementById('errorMsg').style.display = 'none';
+
+  if(!username || !password){ showError('ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ ແລະ ລະຫັດຜ່ານ'); return; }
+  btn.disabled = true; btn.textContent = 'ກຳລັງກວດສອບ...';
+
+  const {data: user, error} = await sb.from('users').select('*').eq('username', username).eq('is_active', true).maybeSingle();
+  if(error || !user){
+    showError('ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ');
+    btn.disabled = false; btn.textContent = 'ເຂົ້າສູ່ລະບົບ';
+    return;
+  }
+
+  const match = dcodeIO.bcrypt.compareSync(password, user.password_hash);
+  if(!match){
+    showError('ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ');
+    btn.disabled = false; btn.textContent = 'ເຂົ້າສູ່ລະບົບ';
+    return;
+  }
+
+  let displayName = username;
+  let homeroomClassrooms = [];
+  let subjectAssignments = [];
+
+  if(user.linked_staff_id){
+    const {data: staffRow} = await sb.from('staff').select('first_name, last_name').eq('staff_id', user.linked_staff_id).maybeSingle();
+    if(staffRow) displayName = `${staffRow.first_name} ${staffRow.last_name}`;
+
+    const {data: hr} = await sb.from('classrooms').select('classroom_id, room_name, grade_id, academic_year_id').eq('homeroom_teacher_id', user.linked_staff_id);
+    homeroomClassrooms = hr || [];
+
+    const {data: sa} = await sb.from('teacher_subject_assignments').select('classroom_id, subject_id, academic_year_id').eq('staff_id', user.linked_staff_id);
+    subjectAssignments = sa || [];
+  }
+
+  const session = {
+    user_id: user.user_id,
+    username: user.username,
+    role: user.role,
+    linked_staff_id: user.linked_staff_id,
+    display_name: displayName,
+    homeroom_classrooms: homeroomClassrooms,
+    subject_assignments: subjectAssignments
+  };
+  sessionStorage.setItem('schoolUser', JSON.stringify(session));
+
+  // ໄປໜ້າທຳອິດຕາມສິດ
+  if(user.role === 'teacher' || user.role === 'academic_affairs'){
+    window.location.href = 'academic.html';
+  } else {
+    window.location.href = 'index.html';
+  }
+}
+
+document.getElementById('btnLogin').addEventListener('click', doLogin);
+document.getElementById('password').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>

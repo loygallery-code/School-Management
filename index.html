@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -51,7 +52,9 @@
   main{padding:26px 32px 60px; max-width:1150px; width:100%; margin:0 auto;}
   .print-meta{display:none;}
   .classroom-summary{margin-bottom:18px;}
-  .classroom-summary table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .classroom-summary .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--radius); box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap table{box-shadow:none; border-radius:0;}
+  table{width:100%; min-width:560px; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   .classroom-summary th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:8px 12px; border-bottom:1px solid var(--line);}
   .classroom-summary td{padding:8px 12px; font-size:13.5px; border-bottom:1px solid var(--line);}
   .classroom-summary tr:last-child td{border-bottom:none;}
@@ -76,9 +79,11 @@
     .app-shell{flex-direction:column;}
     .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
     .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
-    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto; flex:1;}
     .side-link{white-space:nowrap;}
-    .sidebar-foot{display:none;}
+    .sidebar-foot{display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:none; border-left:1px solid rgba(255,255,255,.12); flex-shrink:0; white-space:nowrap;}
+    .sidebar-foot > div{display:none;}
+    .sidebar-foot button{width:auto !important; padding:8px 12px !important;}
   }
   .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
   .toolbar input, .toolbar select{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
@@ -153,6 +158,12 @@
     .code-gen-row{flex-direction:column; align-items:stretch;}
     header.book-header{padding:22px 18px 60px;}
     main{padding:20px 16px 60px;}
+    .overlay{padding:16px 10px; align-items:flex-start;}
+    .modal, .modal.wide{max-width:100%;}
+    .form-grid{gap:12px;}
+    .steps{flex-direction:column;}
+    .modal-foot{flex-wrap:wrap;}
+    input, select, textarea{font-size:16px;}
     .lang-switch{right:18px; top:18px;}
     nav.tabs{padding:0 16px; overflow-x:auto;}
   }
@@ -211,7 +222,7 @@
       <button class="btn secondary" id="btnPrintList">🖶 ພິມລາຍຊື່</button>
     </div>
     <div class="classroom-summary" id="classroomSummary" style="display:none;"></div>
-    <table class="student-print-table">
+    <div class="table-wrap"><table class="student-print-table">
       <thead>
         <tr>
           <th><input type="checkbox" id="selectAllStudents"></th>
@@ -225,7 +236,7 @@
         </tr>
       </thead>
       <tbody id="studentsBody"></tbody>
-    </table>
+    </table></div>
     <div id="studentsEmpty" class="empty" style="display:none;" data-i18n="noStudents">ຍັງບໍ່ມີຂໍ້ມູນນັກຮຽນ — ກົດ "ເພີ່ມນັກຮຽນ" ເພື່ອເລີ່ມ</div>
   </section>
 
@@ -247,7 +258,7 @@
     <div class="toolbar">
       <button class="btn secondary" id="btnUnenrollSelected" data-i18n="unenrollSelected" disabled style="border-color:var(--stamp); color:var(--stamp);">ຍົກເລີກລົງທະບຽນທີ່ເລືອກ</button>
     </div>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr>
         <th><input type="checkbox" id="selectAllEnrolled"></th>
         <th data-i18n="colCode">ລະຫັດ</th>
@@ -257,7 +268,7 @@
         <th></th>
       </tr></thead>
       <tbody id="enrolledBody"></tbody>
-    </table>
+    </table></div>
   </section>
 
 </main>
@@ -405,9 +416,9 @@
         </div>
         <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none;">
         <div class="preview-wrap" id="excelPreview" style="display:none;">
-          <table><thead><tr>
+          <div class="table-wrap"><table><thead><tr>
             <th data-i18n="colCode">ລະຫັດ</th><th data-i18n="colName">ຊື່-ນາມສະກຸນ</th><th data-i18n="labelDob">ວັນເກີດ</th><th></th>
-          </tr></thead><tbody id="excelPreviewBody"></tbody></table>
+          </tr></thead><tbody id="excelPreviewBody"></tbody></table></div>
         </div>
         <div class="progress-text" id="excelProgress"></div>
         <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
@@ -423,9 +434,9 @@
         </div>
         <input type="file" id="photoBulkInput" accept="image/*" multiple style="display:none;">
         <div class="preview-wrap" id="photoPreview" style="display:none;">
-          <table><thead><tr>
+          <div class="table-wrap"><table><thead><tr>
             <th data-i18n="colCode">ຊື່ໄຟລ໌ / ລະຫັດ</th><th data-i18n="colName">ຊື່ນັກຮຽນ</th><th></th>
-          </tr></thead><tbody id="photoPreviewBody"></tbody></table>
+          </tr></thead><tbody id="photoPreviewBody"></tbody></table></div>
         </div>
         <div class="progress-text" id="photoProgress"></div>
         <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
@@ -441,6 +452,8 @@
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let CURRENT_SESSION = null;
 const PHOTO_BUCKET = "student-photos";
 const SCHOOL_CODE = "DPY";
 
@@ -953,10 +966,10 @@ async function loadClassroomSummary(){
 
   box.style.display = 'block';
   box.innerHTML = `
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>${t('thRoom')}</th><th>${t('thTotal')}</th><th>${t('thFemaleCount')}</th><th>${t('thMaleCount')}</th><th>${t('thTeacher')}</th></tr></thead>
       <tbody>${rows.map(r=>`<tr><td>${esc(r.room)}</td><td>${r.total}</td><td>${r.female}</td><td>${r.male}</td><td>${esc(r.teacher)}</td></tr>`).join('')}</tbody>
-    </table>`;
+    </table></div>`;
 }
 
 document.getElementById('filterStatus').addEventListener('change', loadStudents);
@@ -1226,16 +1239,16 @@ async function openStudentProfile(id){
     </div>
 
     <div class="section-title">${t('sectionEnrollHistory')}</div>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>${t('thYear')}</th><th>${t('thGrade')}</th><th>${t('thRoom')}</th><th>${t('thTeacher')}</th></tr></thead>
       <tbody>${historyRows || `<tr><td colspan="4" class="empty">${t('noHistory')}</td></tr>`}</tbody>
-    </table>
+    </table></div>
 
     <div class="section-title">${t('sectionAcademic')}</div>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th>${t('thYear')}</th><th>${t('thSubject')}</th><th>${t('thScore')}</th><th>${t('thGradeLetter')}</th></tr></thead>
       <tbody>${academicRows || `<tr><td colspan="4" class="empty">${t('noAcademic')}</td></tr>`}</tbody>
-    </table>
+    </table></div>
   `;
 }
 window.openStudentProfile = openStudentProfile;
@@ -1574,6 +1587,8 @@ document.getElementById('btnEnrollSelected').addEventListener('click', async ()=
 
 // ---------- INIT ----------
 (async function init(){
+  CURRENT_SESSION = await guardPage();
+  if(!CURRENT_SESSION) return;
   applyStaticI18n();
   await loadReferenceData();
 

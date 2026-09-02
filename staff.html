@@ -7,7 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 <style>
   :root{ --paper:#F5F2EA; --paper-2:#EAE3D2; --ink:#16233F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --emerald:#1F6E52; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFFFF; --radius:8px; --sidebar-w:225px; }
   *{box-sizing:border-box;}
@@ -38,10 +40,18 @@
     .app-shell{flex-direction:column;}
     .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
     .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
-    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto; flex:1;}
     .side-link{white-space:nowrap;}
-    .sidebar-foot{display:none;}
-    main{padding:20px 16px 60px;} nav.tabs{padding:0 16px; overflow-x:auto;}
+    .sidebar-foot{display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:none; border-left:1px solid rgba(255,255,255,.12); flex-shrink:0; white-space:nowrap;}
+    .sidebar-foot > div{display:none;}
+    .sidebar-foot button{width:auto !important; padding:8px 12px !important;}
+    main{padding:20px 16px 60px;}
+    .overlay{padding:16px 10px; align-items:flex-start;}
+    .modal, .modal.wide{max-width:100%;}
+    .form-grid{gap:12px;}
+    .steps{flex-direction:column;}
+    .modal-foot{flex-wrap:wrap;}
+    input, select, textarea{font-size:16px;} nav.tabs{padding:0 16px; overflow-x:auto;}
   }
   .toolbar{display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
   .toolbar input, .toolbar select{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink);}
@@ -51,7 +61,9 @@
   .btn.stamp{background:var(--stamp); border-color:var(--stamp); color:#fff;}
   .btn.small{padding:6px 10px; font-size:12px;}
   .btn:hover{opacity:.9;}
-  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--radius); box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap table{box-shadow:none; border-radius:0;}
+  table{width:100%; min-width:560px; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:10px 12px; font-size:14px; border-bottom:1px solid var(--line); vertical-align:middle;}
   tr:last-child td{border-bottom:none;} tr:hover td{background:#FBF8F0;}
@@ -147,10 +159,10 @@
       <button class="btn secondary" id="btnPrintStaffReport">🖶 ພິມລາຍງານລວມ</button>
       <button class="btn secondary" id="btnDeleteSelectedStaff" disabled style="border-color:var(--stamp); color:var(--stamp);">ລຶບທີ່ເລືອກ</button>
     </div>
-    <table>
+    <div class="table-wrap"><table>
       <thead><tr><th><input type="checkbox" id="selectAllStaff"></th><th></th><th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th>ພະແນກ</th><th>ເບີໂທ</th><th>ສະຖານະ</th><th></th></tr></thead>
       <tbody id="staffBody"></tbody>
-    </table>
+    </table></div>
     <div id="staffEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີຂໍ້ມູນຄູ-ພະນັກງານ</div>
   </section>
 
@@ -176,10 +188,10 @@
         <div><label>ຄູຜູ້ສອນ</label><select id="as_teacher"></select></div>
       </div>
       <button class="btn stamp" id="btnAddAssignment">+ ມອບໝາຍ</button>
-      <table style="margin-top:16px;">
+      <div class="table-wrap"><table style="margin-top:16px;">
         <thead><tr><th>ຫ້ອງຮຽນ</th><th>ວິຊາ</th><th>ຄູຜູ້ສອນ</th><th></th></tr></thead>
         <tbody id="assignmentBody"></tbody>
-      </table>
+      </table></div>
       <div id="assignmentEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີການມອບໝາຍວິຊາ</div>
     </div>
   </section>
@@ -266,9 +278,9 @@
         </div>
         <input type="file" id="staffExcelInput" accept=".xlsx,.xls" style="display:none;">
         <div class="preview-wrap" id="staffExcelPreview" style="display:none;">
-          <table><thead><tr>
+          <div class="table-wrap"><table><thead><tr>
             <th>ລະຫັດ</th><th>ຊື່-ນາມສະກຸນ</th><th>ຕຳແໜ່ງ</th><th></th>
-          </tr></thead><tbody id="staffExcelPreviewBody"></tbody></table>
+          </tr></thead><tbody id="staffExcelPreviewBody"></tbody></table></div>
         </div>
         <div class="progress-text" id="staffExcelProgress"></div>
         <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
@@ -283,9 +295,9 @@
         </div>
         <input type="file" id="staffPhotoBulkInput" accept="image/*" multiple style="display:none;">
         <div class="preview-wrap" id="staffPhotoPreview" style="display:none;">
-          <table><thead><tr>
+          <div class="table-wrap"><table><thead><tr>
             <th>ຊື່ໄຟລ໌ / ລະຫັດ</th><th>ຊື່</th><th></th>
-          </tr></thead><tbody id="staffPhotoPreviewBody"></tbody></table>
+          </tr></thead><tbody id="staffPhotoPreviewBody"></tbody></table></div>
         </div>
         <div class="progress-text" id="staffPhotoProgress"></div>
         <div class="modal-foot" style="padding:14px 0 0; border-top:none;">
@@ -303,7 +315,36 @@
     <div class="modal-body" id="profileBody"></div>
     <div class="modal-foot">
       <button class="btn secondary" id="closeProfile2">ປິດ</button>
+      <button class="btn secondary" id="btnManageLogin" style="border-color:var(--gold); color:var(--gold);">🔑 ບັນຊີ login</button>
       <button class="btn stamp" id="btnPrintProfile">🖶 ພິມ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CREATE / MANAGE LOGIN MODAL ===== -->
+<div class="overlay" id="loginAccountOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2>ບັນຊີ login</h2><button id="closeLoginAccount">&times;</button></div>
+    <div class="modal-body">
+      <div id="loginAccountExisting" style="display:none; margin-bottom:14px; font-size:13px; color:var(--ink-soft);"></div>
+      <div class="form-grid">
+        <div class="full"><label>ຊື່ຜູ້ໃຊ້ *</label><input type="text" id="la_username"></div>
+        <div class="full"><label>ລະຫັດຜ່ານໃໝ່ (ປະໄວ້ຖ້າບໍ່ປ່ຽນ)</label><input type="password" id="la_password"></div>
+        <div class="full" id="la_role_row">
+          <label>ບົດບາດ (Role)</label>
+          <select id="la_role">
+            <option value="admin_system">ແອັດມີນ</option>
+            <option value="director">ຜູ້ບໍລິຫານ</option>
+            <option value="administration">ຝ່າຍບໍລິຫານ</option>
+            <option value="academic_affairs">ຝ່າຍວິຊາການ</option>
+            <option value="teacher">ຄູ</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="cancelLoginAccount">ຍົກເລີກ</button>
+      <button class="btn stamp" id="saveLoginAccount">ບັນທຶກ</button>
     </div>
   </div>
 </div>
@@ -315,6 +356,8 @@
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let CURRENT_SESSION = null;
 const PHOTO_BUCKET = "staff-photos";
 let selectedPhotoFile = null;
 
@@ -876,7 +919,7 @@ document.getElementById('btnPrintProfile').addEventListener('click', async ()=>{
         <div style="font-size:13px; color:#555;">ສະຖານະ: ${s.status==='active'?'ປະຈຳການ':'ພົ້ນຕຳແໜ່ງ'}</div>
       </div>
     </div>
-    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <div class="table-wrap"><table style="width:100%; border-collapse:collapse; font-size:13px;">
       <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5; width:30%;">ເພດ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.gender||'-')}</td></tr>
       <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ວັນເດືອນປີເກີດ</td><td style="padding:5px; border:1px solid #ccc;">${s.date_of_birth||'-'}</td></tr>
       <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ເບີໂທ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.phone||'-')}</td></tr>
@@ -887,7 +930,7 @@ document.getElementById('btnPrintProfile').addEventListener('click', async ()=>{
       <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ໜ້າທີ່ຮັບຜິດຊອບ</td><td style="padding:5px; border:1px solid #ccc;">${esc(s.responsibility_note||'-')}</td></tr>
       <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ວັນທີ່ເລີ່ມວຽກ</td><td style="padding:5px; border:1px solid #ccc;">${s.hire_date||'-'}</td></tr>
       <tr><td style="padding:5px; border:1px solid #ccc; background:#f5f5f5;">ອາຍຸການ</td><td style="padding:5px; border:1px solid #ccc;">${computeTenure(s.hire_date)}</td></tr>
-    </table>
+    </table></div>
     <div style="display:flex; justify-content:space-between; margin-top:70px; font-size:13px; text-align:center;">
       <div>ຜູ້ຄິດໄລ່/HR<br><br><br>( ລາຍເຊັນ ແລະ ຊື່ແຈ້ງ )</div>
       <div>ຜູ້ອຳນວຍການ<br><br><br>( ລາຍເຊັນ ແລະ ປະທັບຕາ )</div>
@@ -925,7 +968,7 @@ document.getElementById('btnPrintStaffReport').addEventListener('click', async (
     </div>
     <div style="text-align:center; font-weight:700; font-size:16px; margin:0 0 14px; padding:8px 0; background:var(--stamp); color:#fff; border-radius:0 0 8px 8px;">ລາຍງານລວມ ຄູ-ພະນັກງານ</div>
     <div style="font-size:12px; text-align:right; color:#666; margin-bottom:10px;">ພິມວັນທີ: ${dateStr} · ທັງໝົດ ${(data||[]).length} ຄົນ</div>
-    <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+    <div class="table-wrap"><table style="width:100%; border-collapse:collapse; font-size:11.5px;">
       <thead><tr style="background:var(--ink); color:#fff;">
         <th style="border:1px solid #ccc; padding:6px;">#</th>
         <th style="border:1px solid #ccc; padding:6px;">ລະຫັດ</th>
@@ -938,7 +981,7 @@ document.getElementById('btnPrintStaffReport').addEventListener('click', async (
         <th style="border:1px solid #ccc; padding:6px;">ສະຖານະ</th>
       </tr></thead>
       <tbody>${rowsHtml}</tbody>
-    </table>
+    </table></div>
   `;
   document.body.classList.add('printing-staff');
   window.print();
@@ -949,9 +992,77 @@ window.addEventListener('afterprint', ()=>{
 });
 
 (async function init(){
+  CURRENT_SESSION = await guardPage();
+  if(!CURRENT_SESSION) return;
   await loadReferenceData();
   await loadStaff();
+
+  // ປຸ່ມ "ບັນຊີ login" ເຫັນສະເພາະ admin_system, director, academic_affairs
+  const canManageLogin = ['admin_system','director','academic_affairs'].includes(CURRENT_SESSION.role);
+  document.getElementById('btnManageLogin').style.display = canManageLogin ? '' : 'none';
 })();
+
+// ---------- MANAGE LOGIN ACCOUNT ----------
+const loginAccountOverlay = document.getElementById('loginAccountOverlay');
+let existingUserId = null;
+
+document.getElementById('btnManageLogin').addEventListener('click', async ()=>{
+  if(!currentProfileStaffId) return;
+
+  document.getElementById('la_username').value = '';
+  document.getElementById('la_password').value = '';
+  document.getElementById('loginAccountExisting').style.display = 'none';
+  existingUserId = null;
+
+  // ຝ່າຍວິຊາການ: ລັອກ role ໄວ້ທີ່ teacher, ບໍ່ໃຫ້ເລືອກອື່ນ
+  const roleRow = document.getElementById('la_role_row');
+  const roleSelect = document.getElementById('la_role');
+  if(CURRENT_SESSION.role === 'academic_affairs'){
+    roleSelect.value = 'teacher';
+    roleSelect.disabled = true;
+  } else {
+    roleSelect.disabled = false;
+    roleSelect.value = 'teacher';
+  }
+
+  const {data: existing} = await sb.from('users').select('*').eq('linked_staff_id', currentProfileStaffId).maybeSingle();
+  if(existing){
+    existingUserId = existing.user_id;
+    document.getElementById('la_username').value = existing.username;
+    if(!roleSelect.disabled) roleSelect.value = existing.role;
+    document.getElementById('loginAccountExisting').style.display = 'block';
+    document.getElementById('loginAccountExisting').textContent = `ມີບັນຊີແລ້ວ: ${existing.username} (${existing.role}) — ${existing.is_active ? 'ໃຊ້ງານຢູ່' : 'ປິດການໃຊ້ງານ'}`;
+  }
+
+  loginAccountOverlay.classList.add('open');
+});
+document.getElementById('closeLoginAccount').addEventListener('click', ()=>loginAccountOverlay.classList.remove('open'));
+document.getElementById('cancelLoginAccount').addEventListener('click', ()=>loginAccountOverlay.classList.remove('open'));
+
+document.getElementById('saveLoginAccount').addEventListener('click', async ()=>{
+  const username = document.getElementById('la_username').value.trim();
+  const password = document.getElementById('la_password').value;
+  const role = document.getElementById('la_role').value;
+
+  if(!username){ toast('ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້'); return; }
+  if(!existingUserId && !password){ toast('ກະລຸນາປ້ອນລະຫັດຜ່ານສຳລັບບັນຊີໃໝ່'); return; }
+
+  const payload = { username, role, linked_staff_id: currentProfileStaffId, is_active: true };
+  if(password){
+    payload.password_hash = dcodeIO.bcrypt.hashSync(password, 10);
+  }
+
+  let error;
+  if(existingUserId){
+    ({error} = await sb.from('users').update(payload).eq('user_id', existingUserId));
+  } else {
+    ({error} = await sb.from('users').insert(payload));
+  }
+  if(error){ toast('ບັນທຶກຜິດພາດ: '+error.message); return; }
+
+  toast('ບັນທຶກບັນຊີ login ສຳເລັດ');
+  loginAccountOverlay.classList.remove('open');
+});
 </script>
 </body>
 </html>

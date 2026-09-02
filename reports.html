@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root{ --paper:#F5F2EA; --paper-2:#EAE3D2; --ink:#16233F; --ink-soft:#4A5570; --stamp:#A83232; --gold:#B8912A; --emerald:#1F6E52; --line:#D8D2C4; --ok:#2F6B3A; --white:#FFFFFF; --radius:8px; --sidebar-w:225px; }
@@ -60,7 +61,9 @@
   .chart-card h3{font-family:'Noto Serif Lao',serif; font-size:15px; margin:0 0 14px;}
   .chart-wrap{position:relative; height:280px;}
 
-  table{width:100%; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--radius); box-shadow:0 1px 4px rgba(22,35,63,.05);}
+  .table-wrap table{box-shadow:none; border-radius:0;}
+  table{width:100%; min-width:560px; border-collapse:collapse; background:var(--white); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
   th{text-align:left; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); background:var(--paper-2); padding:10px 12px; border-bottom:1px solid var(--line);}
   td{padding:9px 12px; font-size:14px; border-bottom:1px solid var(--line);}
   tr:last-child td{border-bottom:none;}
@@ -75,10 +78,18 @@
     .app-shell{flex-direction:column;}
     .sidebar{width:100%; height:auto; position:relative; flex-direction:row; align-items:center;}
     .sidebar-brand{padding:12px 14px; border-bottom:none; border-right:1px solid rgba(255,255,255,.12);}
-    .side-nav{flex-direction:row; padding:8px; overflow-x:auto;}
+    .side-nav{flex-direction:row; padding:8px; overflow-x:auto; flex:1;}
     .side-link{white-space:nowrap;}
-    .sidebar-foot{display:none;}
+    .sidebar-foot{display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:none; border-left:1px solid rgba(255,255,255,.12); flex-shrink:0; white-space:nowrap;}
+    .sidebar-foot > div{display:none;}
+    .sidebar-foot button{width:auto !important; padding:8px 12px !important;}
     main{padding:20px 16px 60px;}
+    .overlay{padding:16px 10px; align-items:flex-start;}
+    .modal, .modal.wide{max-width:100%;}
+    .form-grid{gap:12px;}
+    .steps{flex-direction:column;}
+    .modal-foot{flex-wrap:wrap;}
+    input, select, textarea{font-size:16px;}
   }
 </style>
 </head>
@@ -131,10 +142,10 @@
     </div>
   </div>
 
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>ຊັ້ນຮຽນ (ກົດເພື່ອເບິ່ງລາຍຊື່)</th><th>ຊາຍ</th><th>ຍິງ</th><th>ລວມ</th></tr></thead>
     <tbody id="gradeTableBody"></tbody>
-  </table>
+  </table></div>
   <div id="tableEmpty" class="empty" style="display:none;">ຍັງບໍ່ມີນັກຮຽນລົງທະບຽນໃນປີການສຶກສານີ້</div>
 </main>
 </div>
@@ -144,6 +155,8 @@
 const SUPABASE_URL = "https://cdmxojmwshacrjkhzxhm.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkbXhvam13c2hhY3Jqa2h6eGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTE1MTksImV4cCI6MjEwMzU2NzUxOX0.R3ySzF2uUeAmflw8STR240hpUAuRZejFzTn6xWSwpKc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let CURRENT_SESSION = null;
 
 let barChart = null, pieChart = null;
 let grades = [];
@@ -255,6 +268,8 @@ function renderCharts(labels, maleData, femaleData, totalMale, totalFemale){
 }
 
 (async function init(){
+  CURRENT_SESSION = await guardPage();
+  if(!CURRENT_SESSION) return;
   await loadYears();
   await loadStats();
 })();
